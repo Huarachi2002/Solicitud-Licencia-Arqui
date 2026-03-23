@@ -1,0 +1,30 @@
+import prisma from '../config/db';
+
+class MateriaDato {
+    async getAll() {
+        return await prisma.materia.findMany();
+    }
+    async getById(id: number) {
+        return await prisma.materia.findUnique({
+            where: { id }
+        });
+    }
+    async create(data: { name: string, initials: string }) {
+        return await prisma.materia.create({
+            data
+        });
+    }
+    async update(id: number, data: Partial<{ name: string, initials: string }>) {
+        return await prisma.materia.update({
+            where: { id },
+            data
+        });
+    }
+    async delete(id: number) {
+        return await prisma.materia.delete({
+            where: { id }
+        });
+    }
+}
+
+export default new MateriaDato();

@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Rol {
+  id Int @id @default(autoincrement())
+  description String
+  usuarios Usuario[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Usuario {
+  id Int @id @default(autoincrement())
+  id_rol Int
+  rol Rol @relation(fields: [id_rol], references: [id])
+  grupos Usuario_Grupo[]
+  
+  licencias_generadas Licencia[] @relation("Usuario_Licencia_Solicitante")
+  licencias_aprobadas Licencia[] @relation("Usuario_Licencia_Aprobador")
+
+  name_full String
+  mail String @unique
+  cellphone String
+  num_register String @unique
+  password String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Materia {
+  id Int @id @default(autoincrement())
+  name String
+  initials String
+  grupos Grupo_Materia[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Grupo_Materia {
+  id Int @id @default(autoincrement())
+  id_grupo Int
+  grupo Grupo @relation(fields: [id_grupo], references: [id])
+  id_materia Int
+  materia Materia @relation(fields: [id_materia], references: [id])
+  
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([id_grupo, id_materia])
+}
+
+model Grupo {
+  id Int @id @default(autoincrement())
+  name String
+
+  materias Grupo_Materia[]
+  horario Grupo_Horario[]
+  usuarios Usuario_Grupo[]
+  licencia_detalles Licencia_Detalle[]
+  
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Grupo_Horario {
+  id Int @id @default(autoincrement())
+  id_grupo Int
+  grupo Grupo @relation(fields: [id_grupo], references: [id])
+  id_horario Int
+  horario Horario @relation(fields: [id_horario], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([id_grupo, id_horario])
+}
+
+model Horario {
+  id Int @id @default(autoincrement())
+  day_of_week Int
+  start_time String
+  end_time String
+  grupo_horario Grupo_Horario[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Usuario_Grupo {
+  id Int @id @default(autoincrement())
+  id_usuario Int
+  usuario Usuario @relation(fields: [id_usuario], references: [id])
+  id_grupo Int
+  grupo Grupo @relation(fields: [id_grupo], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Licencia{
+  id Int @id @default(autoincrement())
+  
+  id_usuario_solicitante Int
+  usuario_solicitante Usuario @relation("Usuario_Licencia_Solicitante", fields: [id_usuario_solicitante], references: [id])
+
+  id_usuario_aprobador Int?
+  usuario_aprobador Usuario? @relation("Usuario_Licencia_Aprobador", fields: [id_usuario_aprobador], references: [id])
+  
+  start_date DateTime
+  end_date DateTime
+  reason String
+  state Int @default(0) //0: PENDIENTE, 1: APROBADA, 2: RECHAZADA
+  url_attached_1 String
+  url_attached_2 String?
+  url_attached_3 String?
+
+  licencia_detalles Licencia_Detalle[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Licencia_Detalle {
+  id Int @id @default(autoincrement())
+  id_licencia Int
+  licencia Licencia @relation(fields: [id_licencia], references: [id])
+  id_grupo Int
+  grupo Grupo @relation(fields: [id_grupo], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
