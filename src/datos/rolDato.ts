@@ -4,11 +4,13 @@ class RolDato {
     async getAll() {
         return await prisma.rol.findMany();
     }
-    async getById(id: number) {
-        return await prisma.rol.findUnique({
-            where: { id }
+
+    async getByName(name: string) {
+        return await prisma.rol.findFirst({
+            where: { description: name }
         });
     }
+
     async create(data: { description: string }) {
         return await prisma.rol.create({
             data

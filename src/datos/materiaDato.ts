@@ -4,11 +4,6 @@ class MateriaDato {
     async getAll() {
         return await prisma.materia.findMany();
     }
-    async getById(id: number) {
-        return await prisma.materia.findUnique({
-            where: { id }
-        });
-    }
     async create(data: { name: string, initials: string }) {
         return await prisma.materia.create({
             data

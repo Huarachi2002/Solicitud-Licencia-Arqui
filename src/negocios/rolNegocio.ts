@@ -4,8 +4,9 @@ class RolNegocio {
     async getAll() {
         return await rolDato.getAll();
     }
-    async getById(id: number) {
-        return await rolDato.getById(id);
+
+    async getByName(name: string) {
+        return await rolDato.getByName(name);
     }
     async create(data: { description: string }) {
         return await rolDato.create(data);

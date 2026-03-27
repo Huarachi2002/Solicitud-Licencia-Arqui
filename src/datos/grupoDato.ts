@@ -4,11 +4,7 @@ class GrupoDato {
     async getAll() {
         return await prisma.grupo.findMany();
     }
-    async getById(id: number) {
-        return await prisma.grupo.findUnique({
-            where: { id }
-        });
-    }
+
     async create(data: { name: string, id_materia: number, id_horario: number }) {
         return await prisma.grupo.create({
             data: {

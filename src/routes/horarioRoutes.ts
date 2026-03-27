@@ -5,10 +5,6 @@ router.get('/horario', (req: Request, res: Response) => {
     res.json({ message: 'Lista de horarios' });
 });
 
-router.get('/horario/:id', (req: Request, res: Response) => {
-    res.json({ message: 'Horario por ID' });
-});
-
 router.post('/horario', (req: Request, res: Response) => {
     res.json({ message: 'Crear horario' });
 });

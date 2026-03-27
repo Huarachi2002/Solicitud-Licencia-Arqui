@@ -5,8 +5,8 @@ router.get('/rol', (req: Request, res: Response) => {
     res.json({ message: 'Lista de rols' });
 });
 
-router.get('/rol/:id', (req: Request, res: Response) => {
-    res.json({ message: 'rol por ID' });
+router.get('/rol/:name', (req: Request, res: Response) => {
+    res.json({ message: 'rol por nombre' });
 });
 
 router.post('/rol', (req: Request, res: Response) => {

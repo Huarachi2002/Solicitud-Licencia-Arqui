@@ -4,9 +4,6 @@ class MateriaNegocio {
     async getAll() {
         return await materiaDato.getAll();
     }
-    async getById(id: number) {
-        return await materiaDato.getById(id);
-    }
     async create(data: { name: string, initials: string }) {
         return await materiaDato.create(data);
     }
