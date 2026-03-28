@@ -1,24 +1,16 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import rolPresentacion from '../presentacion/rolPresentacion';
+
 const router = express.Router();
 
-router.get('/rol', (req: Request, res: Response) => {
-    res.json({ message: 'Lista de rols' });
-});
+router.get('/', (req, res) => rolPresentacion.getAll(req, res));
 
-router.get('/rol/:name', (req: Request, res: Response) => {
-    res.json({ message: 'rol por nombre' });
-});
+router.get('/:name', (req, res) => rolPresentacion.getByName(req, res));
 
-router.post('/rol', (req: Request, res: Response) => {
-    res.json({ message: 'Crear rol' });
-});
+router.post('/', (req, res) => rolPresentacion.create(req, res));
 
-router.put('/rol/:id', (req: Request, res: Response) => {
-    res.json({ message: 'Actualizar rol' });
-});
+router.put('/:id', (req, res) => rolPresentacion.update(req, res));
 
-router.delete('/rol/:id', (req: Request, res: Response) => {
-    res.json({ message: 'Eliminar rol' });
-});
+router.delete('/:id', (req, res) => rolPresentacion.delete(req, res));
 
 export default router;

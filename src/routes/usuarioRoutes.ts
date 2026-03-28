@@ -1,8 +1,7 @@
 import express, { Request, Response } from 'express';
+import usuarioPresentacion from '../presentacion/usuarioPresentacion';
 const router = express.Router();
 
-router.post('/usuario/student', (req: Request, res: Response) => {
-    res.json({ message: 'Crear usuario estudiante' });
-});
+router.post('/usuario/student', usuarioPresentacion.registerStudent);
 
 export default router;

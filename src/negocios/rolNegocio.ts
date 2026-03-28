@@ -9,13 +9,13 @@ class RolNegocio {
         return await rolDato.getByName(name);
     }
     async create(data: { description: string }) {
-        return await rolDato.create(data);
+        await rolDato.create(data);
     }
     async update(id: number, data: Partial<{ description: string }>) {
-        return await rolDato.update(id, data);
+        await rolDato.update(id, data);
     }
     async delete(id: number) {
-        return await rolDato.delete(id);
+        await rolDato.delete(id);
     }
 }
 

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestionar Roles | Sistema Académico</title>
+  <meta name="description" content="Módulo para gestionar roles del sistema académico: crear, editar y eliminar roles." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+
+    /* Sidebar nav item hover */
+    .nav-item {
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover {
+      background-color: rgba(255,255,255,0.15);
+      border-left-color: white;
+      transform: translateX(2px);
+    }
+    .nav-item.active {
+      background-color: rgba(255,255,255,0.2);
+      border-left-color: white;
+    }
+
+    /* Table row hover */
+    .table-row {
+      transition: background-color 0.15s ease;
+    }
+    .table-row:hover {
+      background-color: rgba(59,130,246,0.08);
+    }
+
+    /* Modal animations */
+    .modal-overlay {
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-box {
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Button pulse on action */
+    .btn-action {
+      transition: all 0.15s ease;
+    }
+    .btn-action:hover { transform: scale(1.05); }
+    .btn-action:active { transform: scale(0.97); }
+
+    /* Toast */
+    #toast {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    #toast.hidden {
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex">
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="w-56 min-h-screen flex-shrink-0 flex flex-col"
+         style="background: linear-gradient(180deg, #7ec8e3 0%, #5bb5d5 100%);">
+
+    <!-- User info -->
+    <div class="px-5 pt-6 pb-4 border-b border-white/20">
+      <p class="font-bold text-slate-900 text-sm uppercase tracking-wide">USERNAME</p>
+      <p class="text-slate-700 text-xs mt-0.5">typeuser</p>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 py-4 space-y-0.5 px-2">
+      <div class="nav-item active rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Gestionar Roles
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Solicitud de Licencias
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Gestión de Materias
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Configuración Horarios
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Gestionar Personal Docente
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Asignación Carga Académica
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Historial de Notificaciones
+      </div>
+    </nav>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-h-screen">
+
+    <!-- Header bar -->
+    <div class="bg-[#1565a8] px-8 py-5 flex items-center justify-between">
+      <h1 class="text-white text-2xl font-extrabold uppercase tracking-widest">Gestionar Roles</h1>
+      <button id="btn-nuevo-rol"
+              class="btn-action bg-white text-[#1565a8] font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg shadow hover:bg-blue-50"
+              onclick="openCreateModal()">
+        + Nuevo Rol
+      </button>
+    </div>
+
+    <!-- Content area -->
+    <div class="flex-1 bg-[#1e7fc0] p-8">
+
+      <!-- Toast notification -->
+      <div id="toast" class="hidden fixed top-4 right-4 z-50 bg-emerald-500 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg">
+        ✓ <span id="toast-msg"></span>
+      </div>
+
+      <!-- Search bar -->
+      <div class="mb-5 flex items-center gap-3">
+        <input id="search-input"
+               type="text"
+               placeholder="Buscar rol..."
+               oninput="filterTable()"
+               class="w-64 bg-white/90 border border-white/30 text-slate-800 text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-slate-400"
+        />
+        <span class="text-white/70 text-xs">(<span id="count">0</span> roles)</span>
+      </div>
+
+      <!-- Roles table card -->
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg border border-white/20">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-white/20 text-white uppercase text-xs tracking-wider">
+              <th class="text-left px-6 py-3 font-semibold">ID</th>
+              <th class="text-left px-6 py-3 font-semibold">Descripción</th>
+              <th class="text-left px-6 py-3 font-semibold">Creado</th>
+              <th class="text-center px-6 py-3 font-semibold">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="roles-tbody">
+            <!-- Rows injected by JS -->
+          </tbody>
+        </table>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="hidden text-center py-16">
+          <p class="text-white/60 text-sm">No hay roles registrados.</p>
+        </div>
+
+        <!-- Loading state -->
+        <div id="loading-state" class="text-center py-12">
+          <div class="inline-block w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-white/70 text-xs mt-2">Cargando...</p>
+        </div>
+      </div>
+
+    </div><!-- /content area -->
+  </main><!-- /main -->
+
+  <!-- ========== MODAL CREAR / EDITAR ROL ========== -->
+  <div id="modal-rol" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <!-- Overlay -->
+    <div class="modal-overlay absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal()"></div>
+
+    <!-- Box -->
+    <div class="modal-box relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8">
+      <!-- Title -->
+      <p id="modal-subtitle" class="text-white/70 text-xs uppercase tracking-widest mb-1">Crear Rol</p>
+      <h2 id="modal-title" class="text-white text-xl font-extrabold uppercase tracking-wide mb-6">Nuevo Rol</h2>
+
+      <!-- Form -->
+      <form id="form-rol" onsubmit="submitRol(event)">
+        <input type="hidden" id="form-id" value="" />
+
+        <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Descripción</label>
+        <input id="form-description"
+               type="text"
+               required
+               placeholder="Ej: DOCENTE, ADMINISTRADOR..."
+               oninput="this.value = this.value.toUpperCase()"
+               style="text-transform: uppercase;"
+               class="w-full bg-white text-slate-800 rounded-xl px-5 py-3 text-sm mb-6 focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-slate-400"
+        />
+
+        <!-- Buttons -->
+        <div class="flex justify-end gap-3">
+          <button type="button"
+                  id="btn-cancel"
+                  onclick="closeModal()"
+                  class="btn-action bg-white/20 hover:bg-white/30 text-white font-bold text-sm uppercase tracking-wider px-7 py-2.5 rounded-xl border border-white/30">
+            CANCEL
+          </button>
+          <button type="submit"
+                  id="btn-save"
+                  class="btn-action bg-[#0d3b6e] hover:bg-[#0a2d57] text-white font-bold text-sm uppercase tracking-wider px-7 py-2.5 rounded-xl shadow-md">
+            SAVE
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========== MODAL CONFIRMAR ELIMINAR ========== -->
+  <div id="modal-delete" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    <div class="relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-7">
+      <h2 class="text-white font-extrabold text-lg mb-2">¿Eliminar Rol?</h2>
+      <p class="text-white/70 text-sm mb-6">
+        Esta acción eliminará el rol "<span id="delete-desc" class="text-white font-semibold"></span>". No se puede deshacer.
+      </p>
+      <div class="flex justify-end gap-3">
+        <button onclick="closeDeleteModal()"
+                class="btn-action bg-white/20 hover:bg-white/30 text-white font-bold text-sm uppercase tracking-wider px-6 py-2.5 rounded-xl border border-white/30">
+          Cancelar
+        </button>
+        <button id="btn-confirm-delete"
+                class="btn-action bg-red-500 hover:bg-red-600 text-white font-bold text-sm uppercase tracking-wider px-6 py-2.5 rounded-xl shadow-md">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api/rol';
+
+    let roles = [];
+    let deleteTargetId = null;
+
+    const RolPresentacion = {
+      async getAll() {
+        const res = await fetch(`${API_BASE}/`);
+        if (!res.ok) throw new Error('Error al obtener roles');
+        return await res.json();
+      },
+      async create(description) {
+        const res = await fetch(`${API_BASE}/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description })
+        });
+        if (!res.ok) throw new Error('Error al crear rol');
+        return await res.json();
+      },
+      async update(id, description) {
+        const res = await fetch(`${API_BASE}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description })
+        });
+        if (!res.ok) throw new Error('Error al actualizar rol');
+        return await res.json();
+      },
+      async delete(id) {
+        const res = await fetch(`${API_BASE}/${id}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Error al eliminar rol');
+        return await res.json();
+      }
+    };
+
+    async function loadRoles() {
+      showLoading(true);
+      try {
+        roles = await RolPresentacion.getAll();
+        renderTable(roles);
+      } catch (e) {
+        showToast('No se pudo conectar con el servidor', 'error');
+        showLoading(false);
+        showEmpty(true);
+      }
+    }
+
+    // --- Renderizar tabla ---
+    function renderTable(data) {
+      showLoading(false);
+      const tbody = document.getElementById('roles-tbody');
+      tbody.innerHTML = '';
+
+      if (!data.length) {
+        showEmpty(true);
+        updateCount(0);
+        return;
+      }
+      showEmpty(false);
+      updateCount(data.length);
+
+      data.forEach(rol => {
+        const tr = document.createElement('tr');
+        tr.className = 'table-row border-b border-white/10';
+        const fecha = rol.created_at
+          ? new Date(rol.created_at).toLocaleDateString('es-BO', { day:'2-digit', month:'short', year:'numeric' })
+          : '—';
+        tr.innerHTML = `
+          <td class="px-6 py-3.5 text-white/70 text-xs font-mono">#${rol.id}</td>
+          <td class="px-6 py-3.5 text-white font-semibold">${escapeHTML(rol.description)}</td>
+          <td class="px-6 py-3.5 text-white/60 text-xs">${fecha}</td>
+          <td class="px-6 py-3.5 text-center space-x-2">
+            <button onclick="openEditModal(${rol.id}, '${escapeHTML(rol.description)}')"
+                    class="btn-action bg-amber-400 hover:bg-amber-500 text-slate-900 text-xs font-bold uppercase px-3 py-1.5 rounded-lg shadow">
+              Editar
+            </button>
+            <button onclick="openDeleteModal(${rol.id}, '${escapeHTML(rol.description)}')"
+                    class="btn-action bg-red-500 hover:bg-red-600 text-white text-xs font-bold uppercase px-3 py-1.5 rounded-lg shadow">
+              Eliminar
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // --- Filtro de búsqueda ---
+    function filterTable() {
+      const q = document.getElementById('search-input').value.toLowerCase();
+      const filtrados = roles.filter(r => r.description.toLowerCase().includes(q));
+      renderTable(filtrados);
+    }
+
+    // --- Abrir modal CREAR ---
+    function openCreateModal() {
+      document.getElementById('modal-subtitle').textContent = 'Crear Rol';
+      document.getElementById('modal-title').textContent = 'Nuevo Rol';
+      document.getElementById('form-id').value = '';
+      document.getElementById('form-description').value = '';
+      document.getElementById('modal-rol').classList.remove('hidden');
+    }
+
+    // --- Abrir modal EDITAR ---
+    function openEditModal(id, description) {
+      document.getElementById('modal-subtitle').textContent = 'Editar Rol';
+      document.getElementById('modal-title').textContent = 'Modificar Rol';
+      document.getElementById('form-id').value = id;
+      document.getElementById('form-description').value = description;
+      document.getElementById('modal-rol').classList.remove('hidden');
+    }
+
+    // --- Cerrar modal ---
+    function closeModal() {
+      document.getElementById('modal-rol').classList.add('hidden');
+    }
+
+    // --- Submit del formulario (crear o editar) ---
+    async function submitRol(e) {
+      e.preventDefault();
+      const id = document.getElementById('form-id').value;
+      const description = document.getElementById('form-description').value.trim().toUpperCase();
+      if (!description) return;
+
+      const btn = document.getElementById('btn-save');
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      try {
+        if (id) {
+          await RolPresentacion.update(Number(id), description);
+          showToast('Rol actualizado correctamente');
+        } else {
+          await RolPresentacion.create(description);
+          showToast('Rol creado correctamente');
+        }
+        closeModal();
+        await loadRoles();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'SAVE';
+      }
+    }
+
+    // --- Abrir modal ELIMINAR ---
+    function openDeleteModal(id, description) {
+      deleteTargetId = id;
+      document.getElementById('delete-desc').textContent = description;
+      document.getElementById('modal-delete').classList.remove('hidden');
+      document.getElementById('btn-confirm-delete').onclick = confirmDelete;
+    }
+
+    function closeDeleteModal() {
+      deleteTargetId = null;
+      document.getElementById('modal-delete').classList.add('hidden');
+    }
+
+    async function confirmDelete() {
+      if (!deleteTargetId) return;
+      const btn = document.getElementById('btn-confirm-delete');
+      btn.disabled = true;
+      btn.textContent = 'Eliminando...';
+      try {
+        await RolPresentacion.delete(deleteTargetId);
+        showToast('Rol eliminado correctamente');
+        closeDeleteModal();
+        await loadRoles();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Eliminar';
+      }
+    }
+
+    // --- Sidebar nav item active ---
+    function setActiveNav(el) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // --- Helpers de UI ---
+    function showLoading(show) {
+      document.getElementById('loading-state').classList.toggle('hidden', !show);
+    }
+    function showEmpty(show) {
+      document.getElementById('empty-state').classList.toggle('hidden', !show);
+    }
+    function updateCount(n) {
+      document.getElementById('count').textContent = n;
+    }
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, m =>
+        ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])
+      );
+    }
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      const m = document.getElementById('toast-msg');
+      m.textContent = msg;
+      t.className = `fixed top-4 right-4 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-emerald-500'
+      }`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.add('hidden'), 3000);
+    }
+
+    // --- Cerrar modales con ESC ---
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeModal();
+        closeDeleteModal();
+      }
+    });
+
+    // --- INIT ---
+    loadRoles();
+  </script>
+</body>
+</html>

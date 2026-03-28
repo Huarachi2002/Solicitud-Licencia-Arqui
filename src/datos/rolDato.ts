@@ -7,23 +7,23 @@ class RolDato {
 
     async getByName(name: string) {
         return await prisma.rol.findFirst({
-            where: { description: name }
+            where: { description: name },
         });
     }
 
     async create(data: { description: string }) {
-        return await prisma.rol.create({
+        await prisma.rol.create({
             data
         });
     }
     async update(id: number, data: Partial<{ description: string }>) {
-        return await prisma.rol.update({
+        await prisma.rol.update({
             where: { id },
             data
         });
     }
     async delete(id: number) {
-        return await prisma.rol.delete({
+        await prisma.rol.delete({
             where: { id }
         });
     }
