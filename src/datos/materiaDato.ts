@@ -1,6 +1,6 @@
 import prisma from '../config/db';
 
-class MateriaDato {
+class DMateria {
     async getAll() {
         return await prisma.materia.findMany();
     }
@@ -22,4 +22,4 @@ class MateriaDato {
     }
 }
 
-export default new MateriaDato();
+export default new DMateria();

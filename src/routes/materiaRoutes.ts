@@ -1,20 +1,10 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import PMateria from '../presentacion/materiaPresentacion';
 const router = express.Router();
 
-router.get('/materia', (req: Request, res: Response) => {
-    res.json({ message: 'Lista de materia' });
-});
-
-router.post('/materia', (req: Request, res: Response) => {
-    res.json({ message: 'Crear materia' });
-});
-
-router.put('/materia/:id', (req: Request, res: Response) => {
-    res.json({ message: 'Actualizar materia' });
-});
-
-router.delete('/materia/:id', (req: Request, res: Response) => {
-    res.json({ message: 'Eliminar materia' });
-});
+router.get('/', PMateria.getAll);
+router.post('/', PMateria.create);
+router.put('/:id', PMateria.update);
+router.delete('/:id', PMateria.delete);
 
 export default router;

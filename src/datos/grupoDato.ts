@@ -1,31 +1,57 @@
 import prisma from '../config/db';
 
-class GrupoDato {
+class DGrupo {
     async getAll() {
-        return await prisma.grupo.findMany();
-    }
-
-    async create(data: { name: string, id_materia: number, id_horario: number }) {
-        return await prisma.grupo.create({
-            data: {
-                name: data.name,
+        return await prisma.grupo.findMany({
+            include: {
                 materias: {
-                    create: {
-                        id_materia: data.id_materia
-                    }
+                    include: { materia: true }
                 },
                 horario: {
-                    create: {
-                        id_horario: data.id_horario
-                    }
+                    include: { horario: true }
                 }
             }
         });
     }
-    async update(id: number, data: Partial<{ name: string, id_materia: number }>) {
+
+    async create(data: { name: string, ids_materia: number[], ids_horario: number[] }) {
+        const { name, ids_materia, ids_horario } = data;
+        return await prisma.grupo.create({
+            data: {
+                name: name,
+                materias: {
+                    create: ids_materia.map((id_materia: number) => ({
+                        id_materia: id_materia
+                    }))
+                },
+                horario: {
+                    create: ids_horario.map((id_horario: number) => ({
+                        id_horario: id_horario
+                    }))
+                }
+            }
+        });
+    }
+
+    async update(id: number, data: Partial<{ name: string, ids_materia: number[], ids_horario: number[] }>) {
+        const { name, ids_materia, ids_horario } = data;
         return await prisma.grupo.update({
             where: { id },
-            data
+            data: {
+                name: name,
+                materias: ids_materia ? {
+                    deleteMany: {},
+                    create: ids_materia.map((id_materia: number) => ({
+                        id_materia: id_materia
+                    }))
+                } : undefined,
+                horario: ids_horario ? {
+                    deleteMany: {},
+                    create: ids_horario.map((id_horario: number) => ({
+                        id_horario: id_horario
+                    }))
+                } : undefined
+            }
         });
     }
     async delete(id: number) {
@@ -35,4 +61,4 @@ class GrupoDato {
     }
 }
 
-export default new GrupoDato();
+export default new DGrupo();

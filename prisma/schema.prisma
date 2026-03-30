@@ -82,7 +82,7 @@ model Grupo_Horario {
 
 model Horario {
   id Int @id @default(autoincrement())
-  day_of_week Int
+  day_of_week String
   start_time String
   end_time String
   grupo_horario Grupo_Horario[]

@@ -1,13 +1,8 @@
 import prisma from '../config/db';
 
-class HorarioDato {
+class DHorario {
     async getAll() {
         return await prisma.horario.findMany();
-    }
-    async getById(id: number) {
-        return await prisma.horario.findUnique({
-            where: { id }
-        });
     }
     async create(data: { day_of_week: number, start_time: string, end_time: string }) {
         return await prisma.horario.create({
@@ -27,4 +22,4 @@ class HorarioDato {
     }
 }
 
-export default new HorarioDato();
+export default new DHorario();

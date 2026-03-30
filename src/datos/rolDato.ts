@@ -1,6 +1,6 @@
 import prisma from "../config/db";
 
-class RolDato {
+class DRol {
     async getAll() {
         return await prisma.rol.findMany();
     }
@@ -29,4 +29,4 @@ class RolDato {
     }
 }
 
-export default new RolDato();
+export default new DRol();

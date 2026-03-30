@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestionar Roles | Sistema Académico</title>
-  <meta name="description" content="Módulo para gestionar roles del sistema académico: crear, editar y eliminar roles." />
+  <title>Gestionar Grupos | Sistema Académico</title>
+  <meta name="name" content="Módulo para gestionar grupos del sistema académico: crear, editar y eliminar grupos." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
@@ -61,6 +61,18 @@
       transform: translateY(-10px);
       pointer-events: none;
     }
+
+    .custom-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+      margin-right: 4px;
+    }
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen flex">
@@ -74,7 +86,7 @@
     </div>
 
     <nav class="flex-1 py-4 space-y-0.5 px-2">
-      <div class="nav-item active rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
            onclick="setActiveNav(this)">
         Gestionar Roles
       </div>
@@ -82,7 +94,7 @@
            onclick="setActiveNav(this)">
         Solicitud de Licencias
       </div>
-      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+      <div class="nav-item active rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
            onclick="setActiveNav(this)">
         Gestionar Grupos
       </div>
@@ -112,11 +124,11 @@
   <main class="flex-1 flex flex-col min-h-screen">
 
     <div class="bg-[#1565a8] px-8 py-5 flex items-center justify-between">
-      <h1 class="text-white text-2xl font-extrabold uppercase tracking-widest">Gestionar Roles</h1>
-      <button id="btn-nuevo-rol"
+      <h1 class="text-white text-2xl font-extrabold uppercase tracking-widest">Gestionar Grupos</h1>
+      <button id="btn-nuevo-grupo"
               class="btn-action bg-white text-[#1565a8] font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg shadow hover:bg-blue-50"
               onclick="openCreateModal()">
-        + Nuevo Rol
+        + Nuevo Grupo
       </button>
     </div>
 
@@ -129,11 +141,11 @@
       <div class="mb-5 flex items-center gap-3">
         <input id="search-input"
                type="text"
-               placeholder="Buscar rol..."
+               placeholder="Buscar grupo..."
                oninput="filterTable()"
                class="w-64 bg-white/90 border border-white/30 text-slate-800 text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-slate-400"
         />
-        <span class="text-white/70 text-xs">(<span id="count">0</span> roles)</span>
+        <span class="text-white/70 text-xs">(<span id="count">0</span> grupos)</span>
       </div>
 
       <div class="bg-white/10 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg border border-white/20">
@@ -141,17 +153,19 @@
           <thead>
             <tr class="bg-white/20 text-white uppercase text-xs tracking-wider">
               <th class="text-left px-6 py-3 font-semibold">ID</th>
-              <th class="text-left px-6 py-3 font-semibold">Descripción</th>
-              <th class="text-left px-6 py-3 font-semibold">Creado</th>
+              <th class="text-left px-6 py-3 font-semibold">Nombre</th>
+              <th class="text-left px-6 py-3 font-semibold">Materias</th>
+              <th class="text-left px-6 py-3 font-semibold">Horarios</th>
+              <th class="text-left px-6 py-3 font-semibold">Días</th>
               <th class="text-center px-6 py-3 font-semibold">Acciones</th>
             </tr>
           </thead>
-          <tbody id="roles-tbody">
+          <tbody id="grupos-tbody">
           </tbody>
         </table>
 
         <div id="empty-state" class="hidden text-center py-16">
-          <p class="text-white/60 text-sm">No hay roles registrados.</p>
+          <p class="text-white/60 text-sm">No hay grupos registrados.</p>
         </div>
 
         <div id="loading-state" class="text-center py-12">
@@ -163,25 +177,46 @@
     </div>
   </main>
 
-  <div id="modal-rol" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+  <div id="modal-grupo" class="hidden fixed inset-0 z-50 flex items-center justify-center">
     <div class="modal-overlay absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal()"></div>
 
-    <div class="modal-box relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8">
-      <p id="modal-subtitle" class="text-white/70 text-xs uppercase tracking-widest mb-1">Crear Rol</p>
-      <h2 id="modal-title" class="text-white text-xl font-extrabold uppercase tracking-wide mb-6">Nuevo Rol</h2>
+    <div class="modal-box relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-3xl mx-4 p-8">
+      <p id="modal-subtitle" class="text-white/70 text-xs uppercase tracking-widest mb-1">Crear Grupo</p>
+      <h2 id="modal-title" class="text-white text-xl font-extrabold uppercase tracking-wide mb-6">Nuevo Grupo</h2>
 
-      <form id="form-rol" onsubmit="submitRol(event)">
+      <form id="form-grupo" onsubmit="submitGrupo(event)">
         <input type="hidden" id="form-id" value="" />
 
-        <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Descripción</label>
-        <input id="form-description"
+        <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Nombre</label>
+        <input id="form-name"
                type="text"
                required
-               placeholder="Ej: DOCENTE, ADMINISTRADOR..."
+               placeholder="Ej: SA, SB, SC..."
                oninput="this.value = this.value.toUpperCase()"
                style="text-transform: uppercase;"
-               class="w-full bg-white text-slate-800 rounded-xl px-5 py-3 text-sm mb-6 focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-slate-400"
+               class="w-full bg-white text-slate-800 rounded-xl px-5 py-3 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-slate-400"
         />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Materias</label>
+            <select id="form-materias"
+                    multiple
+                    class="w-full bg-white text-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 h-28 hidden-scrollbar">
+              <option disabled>Cargando materias...</option>
+            </select>
+            <p class="text-white/50 text-[10px] mt-1 italic">Mantén Ctrl para seleccionar varias</p>
+          </div>
+          <div>
+            <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Horarios</label>
+            <select id="form-horarios"
+                    multiple
+                    class="w-full bg-white text-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 h-28 hidden-scrollbar">
+              <option disabled>Cargando horarios...</option>
+            </select>
+            <p class="text-white/50 text-[10px] mt-1 italic">Mantén Ctrl para seleccionar varios</p>
+          </div>
+        </div>
 
         <div class="flex justify-end gap-3">
           <button type="button"
@@ -203,9 +238,9 @@
   <div id="modal-delete" class="hidden fixed inset-0 z-50 flex items-center justify-center">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
     <div class="relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-7">
-      <h2 class="text-white font-extrabold text-lg mb-2">¿Eliminar Rol?</h2>
+      <h2 class="text-white font-extrabold text-lg mb-2">¿Eliminar Grupo?</h2>
       <p class="text-white/70 text-sm mb-6">
-        Esta acción eliminará el rol "<span id="delete-desc" class="text-white font-semibold"></span>". No se puede deshacer.
+        Esta acción eliminará el grupo "<span id="delete-desc" class="text-white font-semibold"></span>". No se puede deshacer.
       </p>
       <div class="flex justify-end gap-3">
         <button onclick="closeDeleteModal()"
@@ -221,49 +256,53 @@
   </div>
 
   <script>
-    const API_BASE = '/api/rol';
+    const API_BASE = '/api/grupo';
+    const API_MATERIAS = '/api/materia';
+    const API_HORARIOS = '/api/horario';
 
-    let roles = [];
+    let grupos = [];
+    let materiasList = [];
+    let horariosList = [];
     let deleteTargetId = null;
 
-    const PRol = {
+    const PGrupo = {
       async getAll() {
         const res = await fetch(`${API_BASE}/`);
-        if (!res.ok) throw new Error('Error al obtener roles');
+        if (!res.ok) throw new Error('Error al obtener grupos');
         return await res.json();
       },
-      async create(description) {
+      async create(name, materias = [], horarios = []) {
         const res = await fetch(`${API_BASE}/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ description })
+          body: JSON.stringify({ name, materias, horarios })
         });
-        if (!res.ok) throw new Error('Error al crear rol');
+        if (!res.ok) throw new Error('Error al crear grupo');
         return await res.json();
       },
-      async update(id, description) {
+      async update(id, name, materias = [], horarios = []) {
         const res = await fetch(`${API_BASE}/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ description })
+          body: JSON.stringify({ name, materias, horarios })
         });
-        if (!res.ok) throw new Error('Error al actualizar rol');
+        if (!res.ok) throw new Error('Error al actualizar grupo');
         return await res.json();
       },
       async delete(id) {
         const res = await fetch(`${API_BASE}/${id}`, {
           method: 'DELETE'
         });
-        if (!res.ok) throw new Error('Error al eliminar rol');
+        if (!res.ok) throw new Error('Error al eliminar grupo');
         return await res.json();
       }
     };
 
-    async function loadRoles() {
+    async function loadGrupos() {
       showLoading(true);
       try {
-        roles = await PRol.getAll();
-        renderTable(roles);
+        grupos = await PGrupo.getAll();
+        renderTable(grupos);
       } catch (e) {
         showToast('No se pudo conectar con el servidor', 'error');
         showLoading(false);
@@ -271,9 +310,77 @@
       }
     }
 
+    async function loadInitialData() {
+      showLoading(true);
+      try {
+        const [resGrupos, resMaterias, resHorarios] = await Promise.allSettled([
+          PGrupo.getAll(),
+          fetch(API_MATERIAS)
+            .then(r => { if(r.ok) return r.json(); throw new Error(); })
+            .catch(() => [{id:1, name:'Arquitectura de Software'}, {id:2, name:'Sistemas Operativos 2'}]),
+          fetch(API_HORARIOS)
+            .then(r => { if(r.ok) return r.json(); throw new Error(); })
+            .catch(() => [{id:1, name:'Lunes 07:00-09:15'}, {id:2, name:'Martes 18:15-20:30'}])
+        ]);
+
+        if (resGrupos.status === 'fulfilled') {
+          grupos = resGrupos.value;
+        } else {
+          throw new Error('Error al obtener grupos');
+        }
+
+        materiasList = resMaterias.status === 'fulfilled' ? resMaterias.value : [];
+        horariosList = resHorarios.status === 'fulfilled' ? resHorarios.value : [];
+
+        populateSelect('form-materias', materiasList, 'id', 'name');
+        populateSelect('form-horarios', horariosList, 'id', 'name');
+        renderTable(grupos);
+      } catch (e) {
+        showToast('No se pudo conectar con el servidor', 'error');
+        showLoading(false);
+        showEmpty(true);
+      }
+    }
+
+    function populateSelect(selectId, data, valueKey = 'id', textKey = 'name') {
+      const select = document.getElementById(selectId);
+      const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+      select.innerHTML = '';
+      if (!data || data.length === 0) {
+        select.innerHTML = '<option disabled>No hay datos disponibles</option>';
+        return;
+      }
+      if (selectId === 'form-materias') {
+        data.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item[valueKey];
+          option.textContent = item[textKey];
+          select.appendChild(option);
+        });
+      }else if (selectId === 'form-horarios') {
+        data.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item[valueKey];
+          option.textContent = item['day_of_week'].split(",").map(day => dias[parseInt(day)]).join(", ") + ' | ' + item['start_time'] + ' - ' + item['end_time'];
+          select.appendChild(option);
+        });
+      }
+    }
+
+    const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const DAY_COLORS = {
+      '0': { bg: 'rgba(139,92,246,0.25)',  text: '#c4b5fd' },
+      '1': { bg: 'rgba(59,130,246,0.25)',  text: '#93c5fd' },
+      '2': { bg: 'rgba(16,185,129,0.25)',  text: '#6ee7b7' },
+      '3': { bg: 'rgba(245,158,11,0.25)',  text: '#fcd34d' },
+      '4': { bg: 'rgba(239,68,68,0.25)',   text: '#fca5a5' },
+      '5': { bg: 'rgba(236,72,153,0.25)',  text: '#f9a8d4' },
+      '6': { bg: 'rgba(107,114,128,0.25)', text: '#d1d5db' },
+    };
+
     function renderTable(data) {
       showLoading(false);
-      const tbody = document.getElementById('roles-tbody');
+      const tbody = document.getElementById('grupos-tbody');
       tbody.innerHTML = '';
 
       if (!data.length) {
@@ -284,22 +391,47 @@
       showEmpty(false);
       updateCount(data.length);
 
-      data.forEach(rol => {
+      data.forEach(grupo => {
         const tr = document.createElement('tr');
         tr.className = 'table-row border-b border-white/10';
-        const fecha = rol.created_at
-          ? new Date(rol.created_at).toLocaleDateString('es-BO', { day:'2-digit', month:'short', year:'numeric' })
-          : '—';
+        
+        const materiasStr = grupo.materias && grupo.materias.length 
+          ? '<div class="flex flex-wrap">' + grupo.materias.map(m => 
+              `<span class="custom-badge" style="background:rgba(14,165,233,0.25);color:#7dd3fc;">${escapeHTML(m.materia.name)}</span>`
+            ).join('') + '</div>'
+          : '<span class="text-white/40 italic">Ninguna</span>';
+
+        let horariosStr = '<span class="text-white/40 italic">No asignado</span>';
+        let diasStr = '<span class="text-white/40 italic">No asignado</span>';
+
+        if (grupo.horario && grupo.horario.length) {
+          horariosStr = '<div class="flex flex-wrap">' + grupo.horario.map(h => 
+              `<span class="custom-badge border border-white/20" style="background:rgba(255,255,255,0.1);color:#fff;">${escapeHTML(h.horario.start_time)} - ${escapeHTML(h.horario.end_time)}</span>`
+          ).join('') + '</div>';
+
+          diasStr = '<div class="flex flex-wrap">' + grupo.horario.map(h => {
+             const daysArr = String(h.horario.day_of_week).split(',');
+             return daysArr.map(d => {
+               const val = d.trim();
+               const col = DAY_COLORS[val] || { bg: 'rgba(255,255,255,0.1)', text: '#fff' };
+               const name = DAY_NAMES[parseInt(val, 10)] || val;
+               return `<span class="custom-badge" style="background:${col.bg};color:${col.text};">${escapeHTML(name)}</span>`;
+             }).join('');
+          }).join('') + '</div>';
+        }
+
         tr.innerHTML = `
-          <td class="px-6 py-3.5 text-white/70 text-xs font-mono">#${rol.id}</td>
-          <td class="px-6 py-3.5 text-white font-semibold">${escapeHTML(rol.description)}</td>
-          <td class="px-6 py-3.5 text-white/60 text-xs">${fecha}</td>
+          <td class="px-6 py-3.5 text-white/70 text-xs font-mono w-16">#${grupo.id}</td>
+          <td class="px-6 py-3.5 text-white font-semibold w-24">${escapeHTML(grupo.name)}</td>
+          <td class="px-6 py-3.5 text-white/90 text-xs leading-relaxed max-w-xs">${materiasStr}</td>
+          <td class="px-6 py-3.5 text-white/90 text-xs font-mono leading-relaxed max-w-xs">${horariosStr}</td>
+          <td class="px-6 py-3.5 text-white/90 text-xs leading-relaxed max-w-xs">${diasStr}</td>
           <td class="px-6 py-3.5 text-center space-x-2">
-            <button onclick="openEditModal(${rol.id}, '${escapeHTML(rol.description)}')"
+            <button onclick="openEditModal(${grupo.id})"
                     class="btn-action bg-amber-400 hover:bg-amber-500 text-slate-900 text-xs font-bold uppercase px-3 py-1.5 rounded-lg shadow">
               Editar
             </button>
-            <button onclick="openDeleteModal(${rol.id}, '${escapeHTML(rol.description)}')"
+            <button onclick="openDeleteModal(${grupo.id}, '${escapeHTML(grupo.name)}')"
                     class="btn-action bg-red-500 hover:bg-red-600 text-white text-xs font-bold uppercase px-3 py-1.5 rounded-lg shadow">
               Eliminar
             </button>
@@ -311,35 +443,58 @@
 
     function filterTable() {
       const q = document.getElementById('search-input').value.toLowerCase();
-      const filtrados = roles.filter(r => r.description.toLowerCase().includes(q));
+      const filtrados = grupos.filter(grupo => grupo.name.toLowerCase().includes(q));
       renderTable(filtrados);
     }
 
     function openCreateModal() {
-      document.getElementById('modal-subtitle').textContent = 'Crear Rol';
-      document.getElementById('modal-title').textContent = 'Nuevo Rol';
+      document.getElementById('modal-subtitle').textContent = 'Crear Grupo';
+      document.getElementById('modal-title').textContent = 'Nuevo Grupo';
       document.getElementById('form-id').value = '';
-      document.getElementById('form-description').value = '';
-      document.getElementById('modal-rol').classList.remove('hidden');
+      document.getElementById('form-name').value = '';
+      
+      document.getElementById('form-materias').selectedIndex = -1;
+      document.getElementById('form-horarios').selectedIndex = -1;
+
+      document.getElementById('modal-grupo').classList.remove('hidden');
     }
 
-    function openEditModal(id, description) {
-      document.getElementById('modal-subtitle').textContent = 'Editar Rol';
-      document.getElementById('modal-title').textContent = 'Modificar Rol';
-      document.getElementById('form-id').value = id;
-      document.getElementById('form-description').value = description;
-      document.getElementById('modal-rol').classList.remove('hidden');
+    function openEditModal(id) {
+      const grupo = grupos.find(g => g.id === id);
+      if (!grupo) return;
+
+      document.getElementById('modal-subtitle').textContent = 'Editar Grupo';
+      document.getElementById('modal-title').textContent = 'Modificar Grupo';
+      document.getElementById('form-id').value = grupo.id;
+      document.getElementById('form-name').value = grupo.name;
+
+      const materiasIds = grupo.materias ? grupo.materias.map(m => m.id_materia) : [];
+      Array.from(document.getElementById('form-materias').options).forEach(opt => {
+        opt.selected = materiasIds.includes(Number(opt.value));
+      });
+
+      const horariosIds = grupo.horario ? grupo.horario.map(h => h.id_horario) : [];
+      Array.from(document.getElementById('form-horarios').options).forEach(opt => {
+        opt.selected = horariosIds.includes(Number(opt.value));
+      });
+
+      document.getElementById('modal-grupo').classList.remove('hidden');
     }
 
     function closeModal() {
-      document.getElementById('modal-rol').classList.add('hidden');
+      document.getElementById('modal-grupo').classList.add('hidden');
     }
 
-    async function submitRol(e) {
+    async function submitGrupo(e) {
       e.preventDefault();
       const id = document.getElementById('form-id').value;
-      const description = document.getElementById('form-description').value.trim().toUpperCase();
-      if (!description) return;
+      const name = document.getElementById('form-name').value.trim().toUpperCase();
+      if (!name) return;
+
+      const materiasSelect = document.getElementById('form-materias');
+      const horariosSelect = document.getElementById('form-horarios');
+      const selectedMaterias = Array.from(materiasSelect.selectedOptions).map(opt => Number(opt.value));
+      const selectedHorarios = Array.from(horariosSelect.selectedOptions).map(opt => Number(opt.value));
 
       const btn = document.getElementById('btn-save');
       btn.disabled = true;
@@ -347,14 +502,14 @@
 
       try {
         if (id) {
-          await PRol.update(Number(id), description);
-          showToast('Rol actualizado correctamente');
+          await PGrupo.update(Number(id), name, selectedMaterias, selectedHorarios);
+          showToast('Grupo actualizado correctamente');
         } else {
-          await PRol.create(description);
-          showToast('Rol creado correctamente');
+          await PGrupo.create(name, selectedMaterias, selectedHorarios);
+          showToast('Grupo creado correctamente');
         }
         closeModal();
-        await loadRoles();
+        await loadGrupos();
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
@@ -363,9 +518,9 @@
       }
     }
 
-    function openDeleteModal(id, description) {
+    function openDeleteModal(id, name) {
       deleteTargetId = id;
-      document.getElementById('delete-desc').textContent = description;
+      document.getElementById('delete-desc').textContent = name;
       document.getElementById('modal-delete').classList.remove('hidden');
       document.getElementById('btn-confirm-delete').onclick = confirmDelete;
     }
@@ -381,10 +536,10 @@
       btn.disabled = true;
       btn.textContent = 'Eliminando...';
       try {
-        await PRol.delete(deleteTargetId);
-        showToast('Rol eliminado correctamente');
+        await PGrupo.delete(deleteTargetId);
+        showToast('Grupo eliminado correctamente');
         closeDeleteModal();
-        await loadRoles();
+        await loadGrupos();
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
@@ -450,7 +605,7 @@
       }
     });
 
-    loadRoles();
+    loadInitialData();
   </script>
 </body>
 </html>

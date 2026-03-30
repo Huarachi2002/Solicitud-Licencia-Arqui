@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Registro Estudiante | Solicitud de Licencias UAGRM</title>
-  <meta name="description" content="Formulario de registro de estudiantes para el sistema de Solicitud de Licencias UAGRM." />
+  <title>Registro Docente | Solicitud de Licencias UAGRM</title>
+  <meta name="description" content="Formulario de registro de docentes para el sistema de Solicitud de Licencias UAGRM." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
@@ -75,7 +75,7 @@
           REGISTRARME
         </h2>
 
-        <form id="form-estudiante" onsubmit="submitEstudiante(event)" novalidate
+        <form id="form-docente" onsubmit="submitDocente(event)" novalidate
               class="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-8 space-y-5">
 
           <div>
@@ -109,7 +109,7 @@
               <input id="input-ci"
                      type="text"
                      required
-                     placeholder="Ej: 1234567 SC"
+                     placeholder="Ej: 1234567"
                      class="field-input w-full bg-white text-slate-800 rounded-xl px-5 py-3 text-sm
                             focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-slate-400" />
             </div>
@@ -237,7 +237,7 @@
       </div>
       <h2 class="text-white font-extrabold text-xl mb-2">Registro Correcto</h2>
       <p class="text-white/70 text-sm mb-1">
-        Tu cuenta de estudiante ha sido creada correctamente.
+        Tu cuenta de docente ha sido creada correctamente.
       </p>
       <p class="text-white/50 text-xs mb-6">Redirigiendo al inicio...</p>
       <div class="w-full bg-white/20 rounded-full h-1 mb-6 overflow-hidden">
@@ -249,11 +249,11 @@
   </div>
 
   <script>
-    const API_BASE = '/api/usuario/student';
+    const API_BASE = '/api/usuario/teacher';
 
 
     const PUsuario = {
-      async registerStudent({ name_full, mail, cellphone, num_register, password, confirmPassword }) {
+      async registerTeacher({ name_full, mail, cellphone, num_register, password, confirmPassword }) {
         if (!name_full.trim())       throw new Error('El nombre completo es requerido.');
         if (!num_register.trim())    throw new Error('El nro. de registro es requerido.');
         if (!mail.trim())            throw new Error('El correo electrónico es requerido.');
@@ -281,7 +281,7 @@
     };
 
     function messagePop() {
-        document.getElementById('form-estudiante').reset();
+        document.getElementById('form-docente').reset();
         resetStrength();
         document.getElementById('match-label').textContent = '';
 
@@ -296,7 +296,7 @@
         }, 2000);
     }
 
-    async function submitEstudiante(e) {
+    async function submitDocente(e) {
       e.preventDefault();
 
       const payload = {
@@ -313,7 +313,7 @@
       btn.textContent = 'Registrando...';
 
       try {
-        await PUsuario.registerStudent(payload);
+        await PUsuario.registerTeacher(payload);
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
@@ -323,7 +323,7 @@
     }
 
     function resetForm() {
-      document.getElementById('form-estudiante').reset();
+      document.getElementById('form-docente').reset();
       resetStrength();
       document.getElementById('match-label').textContent = '';
     }

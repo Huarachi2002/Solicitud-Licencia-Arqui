@@ -1,21 +1,18 @@
-import horarioDato from "../datos/horarioDato";
+import DHorario from "../datos/horarioDato";
 
-class HorarioNegocio {
+class NHorario {
     async getAll() {
-        return await horarioDato.getAll();
-    }
-    async getById(id: number) {
-        return await horarioDato.getById(id);
+        return await DHorario.getAll();
     }
     async create(data: { day_of_week: number, start_time: string, end_time: string }) {
-        return await horarioDato.create(data);
+        return await DHorario.create(data);
     }
     async update(id: number, data: Partial<{ day_of_week: number, start_time: string, end_time: string }>) {
-        return await horarioDato.update(id, data);
+        return await DHorario.update(id, data);
     }
     async delete(id: number) {
-        return await horarioDato.delete(id);
+        return await DHorario.delete(id);
     }
 }
 
-export default new HorarioNegocio();
+export default new NHorario();

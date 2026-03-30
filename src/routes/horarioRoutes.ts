@@ -1,20 +1,10 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import PHorario from '../presentacion/horarioPresentacion';
 const router = express.Router();
 
-router.get('/horario', (req: Request, res: Response) => {
-    res.json({ message: 'Lista de horarios' });
-});
-
-router.post('/horario', (req: Request, res: Response) => {
-    res.json({ message: 'Crear horario' });
-});
-
-router.put('/horario/:id', (req: Request, res: Response) => {
-    res.json({ message: 'Actualizar horario' });
-});
-
-router.delete('/horario/:id', (req: Request, res: Response) => {
-    res.json({ message: 'Eliminar horario' });
-});
+router.get('/', PHorario.getAll);
+router.post('/', PHorario.create);
+router.put('/:id', PHorario.update);
+router.delete('/:id', PHorario.delete);
 
 export default router;

@@ -28,17 +28,14 @@
 </head>
 <body class="bg-slate-100 min-h-screen flex">
 
-  <!-- ========== SIDEBAR ========== -->
   <aside class="w-56 min-h-screen flex-shrink-0 flex flex-col"
          style="background: linear-gradient(180deg, #7ec8e3 0%, #5bb5d5 100%);">
 
-    <!-- User info -->
     <div class="px-5 pt-6 pb-4 border-b border-white/20">
       <p class="font-bold text-slate-900 text-sm uppercase tracking-wide">Estudiante</p>
       <p class="text-slate-700 text-xs mt-0.5">Panel principal</p>
     </div>
 
-    <!-- Navigation -->
     <nav class="flex-1 py-4 space-y-0.5 px-2">
       <div class="nav-item active rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
            onclick="setActiveNav(this)">
@@ -59,10 +56,8 @@
     </nav>
   </aside>
 
-  <!-- ========== MAIN CONTENT ========== -->
   <main class="flex-1 flex flex-col min-h-screen">
 
-    <!-- Header bar -->
     <div class="bg-[#1565a8] px-8 py-5 flex items-center justify-between">
       <h1 class="text-white text-2xl font-extrabold uppercase tracking-widest">
         Solicitud de Licencias UAGRM
@@ -72,7 +67,6 @@
       </span>
     </div>
 
-    <!-- Content area (vacío por ahora) -->
     <div class="flex-1 bg-[#1e7fc0] p-8 flex items-center justify-center">
       <p class="text-white/40 text-sm uppercase tracking-widest">Próximamente</p>
     </div>
@@ -83,6 +77,25 @@
     function setActiveNav(el) {
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
       el.classList.add('active');
+      // Navigate based on text content
+      const text = el.textContent.trim().toLowerCase();
+      const routes = {
+        'inicio': '/home',
+        'gestionar roles': '/roles',
+        'solicitud de licencias': '/licencias',
+        'mis licencias': '/mis-licencias',
+        'historial': '/historial',
+        'gestionar grupos': '/grupos',
+        'gestión de materias': '/materias',
+        'configuración horarios': '/horarios',
+        'gestionar personal docente': '/teacher',
+        'asignación carga académica': '/carga-academica',
+        'historial de notificaciones': '/notificaciones'
+      };
+      if (routes[text]) {
+        window.location.href = routes[text];
+      }
+
     }
   </script>
 </body>

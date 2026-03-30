@@ -19,12 +19,28 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, 'presentacion/vistas')));
 
+app.get('/materias', (req, res) => {
+    res.redirect('/gestionar-materias.html');
+});
+
 app.get('/roles', (req, res) => {
     res.redirect('/gestionar-roles.html');
 });
 
 app.get('/student', (req, res) => {
     res.redirect('/registro-estudiante.html')
+})
+
+app.get('/teacher', (req, res) => {
+    res.redirect('/registro-docente.html')
+})
+
+app.get('/horarios', (req, res) => {
+    res.redirect('/gestionar-horarios.html')
+})
+
+app.get('/grupos', (req, res) => {
+    res.redirect('/gestionar-grupo.html')
 })
 
 app.get('/home', (req, res) => {

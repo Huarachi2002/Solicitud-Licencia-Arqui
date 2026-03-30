@@ -1,20 +1,17 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import PGrupo from '../presentacion/grupoPresentacion';
 const router = express.Router();
 
-router.get('/grupo', (req: Request, res: Response) => {
-    res.json({ message: 'Lista de grupos' });
-});
+router.get('/', PGrupo.getAll);
 
-router.post('/grupo', (req: Request, res: Response) => {
-    res.json({ message: 'Crear grupo' });
-});
+router.post('/', PGrupo.create);
 
-router.put('/grupo/:id', (req: Request, res: Response) => {
-    res.json({ message: 'Actualizar grupo' });
-});
+router.put('/:id', PGrupo.update);
 
-router.delete('/grupo/:id', (req: Request, res: Response) => {
-    res.json({ message: 'Eliminar grupo' });
-});
+router.delete('/:id', PGrupo.delete);
+
+router.get('/materias', PGrupo.getAllMaterias);
+
+router.get('/horarios', PGrupo.getAllHorarios);
 
 export default router;

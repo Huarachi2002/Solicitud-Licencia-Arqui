@@ -1,18 +1,18 @@
-import materiaDato from "../datos/materiaDato";
+import DMateria from "../datos/materiaDato";
 
-class MateriaNegocio {
+class NMateria {
     async getAll() {
-        return await materiaDato.getAll();
+        return await DMateria.getAll();
     }
     async create(data: { name: string, initials: string }) {
-        return await materiaDato.create(data);
+        return await DMateria.create(data);
     }
     async update(id: number, data: Partial<{ name: string, initials: string }>) {
-        return await materiaDato.update(id, data);
+        return await DMateria.update(id, data);
     }
     async delete(id: number) {
-        return await materiaDato.delete(id);
+        return await DMateria.delete(id);
     }
 }
 
-export default new MateriaNegocio();
+export default new NMateria();

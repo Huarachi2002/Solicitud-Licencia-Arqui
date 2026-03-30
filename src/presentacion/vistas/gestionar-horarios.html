@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestionar Horarios | Sistema Académico</title>
+  <meta name="description" content="Módulo para gestionar horarios del sistema académico: crear, editar y eliminar franjas horarias." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+
+    .nav-item {
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover {
+      background-color: rgba(255,255,255,0.15);
+      border-left-color: white;
+      transform: translateX(2px);
+    }
+    .nav-item.active {
+      background-color: rgba(255,255,255,0.2);
+      border-left-color: white;
+    }
+
+    .table-row {
+      transition: background-color 0.15s ease;
+    }
+    .table-row:hover {
+      background-color: rgba(59,130,246,0.08);
+    }
+
+    .modal-overlay {
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-box {
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn-action {
+      transition: all 0.15s ease;
+    }
+    .btn-action:hover { transform: scale(1.05); }
+    .btn-action:active { transform: scale(0.97); }
+
+    #toast {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    #toast.hidden {
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+    }
+
+    .day-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    #duration-preview {
+      transition: all 0.2s ease;
+    }
+
+    .view-btn {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .view-btn.active {
+      background-color: rgba(255,255,255,0.25);
+      color: white;
+    }
+
+    .cal-cell {
+      min-height: 52px;
+      transition: background-color 0.15s ease;
+    }
+    .cal-cell.filled {
+      background: rgba(255,255,255,0.15);
+    }
+    .cal-cell.filled:hover {
+      background: rgba(255,255,255,0.22);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex">
+
+  <aside class="w-56 min-h-screen flex-shrink-0 flex flex-col"
+         style="background: linear-gradient(180deg, #7ec8e3 0%, #5bb5d5 100%);">
+
+    <div class="px-5 pt-6 pb-4 border-b border-white/20">
+      <p class="font-bold text-slate-900 text-sm uppercase tracking-wide">USERNAME</p>
+      <p class="text-slate-700 text-xs mt-0.5">typeuser</p>
+    </div>
+
+    <nav class="flex-1 py-4 space-y-0.5 px-2">
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Gestionar Roles
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Solicitud de Licencias
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Gestionar Grupos
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Gestión de Materias
+      </div>
+      <div class="nav-item active rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Configuración Horarios
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Gestionar Personal Docente
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Asignación Carga Académica
+      </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">
+        Historial de Notificaciones
+      </div>
+    </nav>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-h-screen">
+
+    <div class="bg-[#1565a8] px-8 py-5 flex items-center justify-between">
+      <h1 class="text-white text-2xl font-extrabold uppercase tracking-widest">Gestionar Horarios</h1>
+      <div class="flex items-center gap-3">
+        <div class="flex rounded-lg overflow-hidden border border-white/30 text-xs font-bold uppercase tracking-wider">
+          <button id="btn-view-table"
+                  class="view-btn active px-4 py-2 text-white/80"
+                  onclick="setView('table')">☰ Lista</button>
+          <button id="btn-view-cal"
+                  class="view-btn px-4 py-2 text-white/80 border-l border-white/30"
+                  onclick="setView('calendar')">📅 Semana</button>
+        </div>
+        <button id="btn-nuevo-horario"
+                class="btn-action bg-white text-[#1565a8] font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg shadow hover:bg-blue-50"
+                onclick="openCreateModal()">
+          + Nuevo Horario
+        </button>
+      </div>
+    </div>
+
+    <div class="flex-1 bg-[#1e7fc0] p-8">
+
+      <div id="toast" class="hidden fixed top-4 right-4 z-50 bg-emerald-500 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg">
+        ✓ <span id="toast-msg"></span>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-4 border border-white/20 flex items-center gap-3">
+          <span class="text-2xl">🕐</span>
+          <div>
+            <p class="text-white/60 text-xs uppercase tracking-widest">Total Horarios</p>
+            <p id="stat-total" class="text-white text-xl font-extrabold">—</p>
+          </div>
+        </div>
+        <div class="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-4 border border-white/20 flex items-center gap-3">
+          <span class="text-2xl">📆</span>
+          <div>
+            <p class="text-white/60 text-xs uppercase tracking-widest">Días Cubiertos</p>
+            <p id="stat-days" class="text-white text-xl font-extrabold">—</p>
+          </div>
+        </div>
+        <div class="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-4 border border-white/20 flex items-center gap-3">
+          <span class="text-2xl">⏱️</span>
+          <div>
+            <p class="text-white/60 text-xs uppercase tracking-widest">Horas / Semana</p>
+            <p id="stat-hours" class="text-white text-xl font-extrabold">—</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-5 flex items-center gap-3 flex-wrap">
+        <input id="search-input"
+               type="text"
+               placeholder="Buscar horario..."
+               oninput="filterTable()"
+               class="w-56 bg-white/90 border border-white/30 text-slate-800 text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-slate-400"
+        />
+        <select id="filter-day" onchange="filterTable()"
+                class="bg-white/90 border border-white/30 text-slate-800 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-white/50">
+          <option value="">Todos los días</option>
+          <option value="0">Lunes</option>
+          <option value="1">Martes</option>
+          <option value="2">Miércoles</option>
+          <option value="3">Jueves</option>
+          <option value="4">Viernes</option>
+          <option value="5">Sábado</option>
+          <option value="6">Domingo</option>
+        </select>
+        <span class="text-white/70 text-xs">(<span id="count">0</span> horarios)</span>
+      </div>
+
+      <div id="view-table">
+        <div class="bg-white/10 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg border border-white/20">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-white/20 text-white uppercase text-xs tracking-wider">
+                <th class="text-left px-6 py-3 font-semibold">ID</th>
+                <th class="text-left px-6 py-3 font-semibold">Día</th>
+                <th class="text-left px-6 py-3 font-semibold">Hora Inicio</th>
+                <th class="text-left px-6 py-3 font-semibold">Hora Fin</th>
+                <th class="text-left px-6 py-3 font-semibold">Duración</th>
+                <th class="text-center px-6 py-3 font-semibold">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="horarios-tbody">
+            </tbody>
+          </table>
+
+          <div id="empty-state" class="hidden text-center py-16">
+            <p class="text-white/60 text-sm">No hay horarios registrados.</p>
+          </div>
+
+          <div id="loading-state" class="text-center py-12">
+            <div class="inline-block w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-white/70 text-xs mt-2">Cargando...</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-calendar" class="hidden">
+        <div class="bg-white/10 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg border border-white/20">
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="bg-white/20 text-white uppercase tracking-wider">
+                  <th class="text-left px-4 py-3 font-semibold w-24">Hora</th>
+                  <th class="text-center px-3 py-3 font-semibold">Lunes</th>
+                  <th class="text-center px-3 py-3 font-semibold">Martes</th>
+                  <th class="text-center px-3 py-3 font-semibold">Miércoles</th>
+                  <th class="text-center px-3 py-3 font-semibold">Jueves</th>
+                  <th class="text-center px-3 py-3 font-semibold">Viernes</th>
+                  <th class="text-center px-3 py-3 font-semibold">Sábado</th>
+                  <th class="text-center px-3 py-3 font-semibold">Domingo</th>
+                </tr>
+              </thead>
+              <tbody id="cal-tbody">
+              </tbody>
+            </table>
+          </div>
+          <div id="cal-empty" class="hidden text-center py-12">
+            <p class="text-white/60 text-sm">Sin horarios para mostrar.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="modal-horario" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="modal-overlay absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal()"></div>
+
+    <div class="modal-box relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8">
+      <p id="modal-subtitle" class="text-white/70 text-xs uppercase tracking-widest mb-1">Crear Horario</p>
+      <h2 id="modal-title" class="text-white text-xl font-extrabold uppercase tracking-wide mb-6">Nuevo Horario</h2>
+
+      <form id="form-horario" onsubmit="submitHorario(event)">
+        <input type="hidden" id="form-id" value="" />
+
+        <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Día de la Semana</label>
+        <p class="text-white/60 text-[10px] mb-2 -mt-1 font-medium">Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar múltiples días.</p>
+        <select id="form-day"
+                multiple
+                required
+                size="7"
+                class="w-full bg-white text-slate-800 rounded-xl px-5 py-3 text-sm mb-5 focus:outline-none focus:ring-2 focus:ring-blue-300 scrollbar-thin scrollbar-thumb-blue-300">
+          <option value="0">Lunes</option>
+          <option value="1">Martes</option>
+          <option value="2">Miércoles</option>
+          <option value="3">Jueves</option>
+          <option value="4">Viernes</option>
+          <option value="5">Sábado</option>
+          <option value="6">Domingo</option>
+        </select>
+
+        <div class="grid grid-cols-2 gap-4 mb-5">
+          <div>
+            <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Hora Inicio</label>
+            <input id="form-start"
+                   type="time"
+                   required
+                   class="w-full bg-white text-slate-800 rounded-xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+          </div>
+          <div>
+            <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Hora Fin</label>
+            <input id="form-end"
+                   type="time"
+                   required
+                   class="w-full bg-white text-slate-800 rounded-xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+          </div>
+        </div>
+
+        <div id="duration-preview" class="hidden mb-5 bg-white/15 border border-white/30 rounded-xl px-4 py-2.5 text-white text-sm font-semibold text-center"></div>
+
+        <div class="flex justify-end gap-3">
+          <button type="button"
+                  id="btn-cancel"
+                  onclick="closeModal()"
+                  class="btn-action bg-white/20 hover:bg-white/30 text-white font-bold text-sm uppercase tracking-wider px-7 py-2.5 rounded-xl border border-white/30">
+            CANCELAR
+          </button>
+          <button type="submit"
+                  id="btn-save"
+                  class="btn-action bg-[#0d3b6e] hover:bg-[#0a2d57] text-white font-bold text-sm uppercase tracking-wider px-7 py-2.5 rounded-xl shadow-md">
+            GUARDAR
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-delete" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    <div class="modal-box relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-7">
+      <h2 class="text-white font-extrabold text-lg mb-2">¿Eliminar Horario?</h2>
+      <p class="text-white/70 text-sm mb-6">
+        Esta acción eliminará el horario "<span id="delete-desc" class="text-white font-semibold"></span>". No se puede deshacer.
+      </p>
+      <div class="flex justify-end gap-3">
+        <button onclick="closeDeleteModal()"
+                class="btn-action bg-white/20 hover:bg-white/30 text-white font-bold text-sm uppercase tracking-wider px-6 py-2.5 rounded-xl border border-white/30">
+          Cancelar
+        </button>
+        <button id="btn-confirm-delete"
+                class="btn-action bg-red-500 hover:bg-red-600 text-white font-bold text-sm uppercase tracking-wider px-6 py-2.5 rounded-xl shadow-md">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api/horario';
+
+    let horarios = [];
+    let deleteTargetId = null;
+    let currentView = 'table';
+
+    const PHorario = {
+      async getAll() {
+        const res = await fetch(`${API_BASE}/`);
+        if (!res.ok) throw new Error('Error al obtener horarios');
+        return await res.json();
+      },
+      async create(day_of_week, start_time, end_time) {
+        const res = await fetch(`${API_BASE}/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ day_of_week, start_time, end_time })
+        });
+        if (!res.ok) throw new Error('Error al crear horario');
+        return await res.json();
+      },
+      async update(id, day_of_week, start_time, end_time) {
+        const res = await fetch(`${API_BASE}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ day_of_week, start_time, end_time })
+        });
+        if (!res.ok) throw new Error('Error al actualizar horario');
+        return await res.json();
+      },
+      async delete(id) {
+        const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Error al eliminar horario');
+        return await res.json();
+      }
+    };
+
+    async function loadHorarios() {
+      showLoading(true);
+      try {
+        horarios = await PHorario.getAll();
+        renderTable(horarios);
+        updateStats(horarios);
+      } catch (e) {
+        showToast('No se pudo conectar con el servidor', 'error');
+        showLoading(false);
+        showEmpty(true);
+      }
+    }
+
+    const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+    const DAY_COLORS = {
+      '0': { bg: 'rgba(139,92,246,0.25)',  text: '#c4b5fd' }, // Lunes
+      '1': { bg: 'rgba(59,130,246,0.25)',  text: '#93c5fd' }, // Martes
+      '2': { bg: 'rgba(16,185,129,0.25)',  text: '#6ee7b7' }, // Miércoles
+      '3': { bg: 'rgba(245,158,11,0.25)',  text: '#fcd34d' }, // Jueves
+      '4': { bg: 'rgba(239,68,68,0.25)',   text: '#fca5a5' }, // Viernes
+      '5': { bg: 'rgba(236,72,153,0.25)',  text: '#f9a8d4' }, // Sábado
+      '6': { bg: 'rgba(107,114,128,0.25)', text: '#d1d5db' }, // Domingo
+    };
+
+    function getDayName(dayValue) {
+      return String(dayValue).split(',').map(val => {
+        const idx = parseInt(val.trim(), 10);
+        return DAY_NAMES[idx] || val;
+      }).join(', ');
+    }
+
+    function renderTable(data) {
+      showLoading(false);
+      const tbody = document.getElementById('horarios-tbody');
+      tbody.innerHTML = '';
+
+      if (!data.length) { showEmpty(true); updateCount(0); renderCalendar([]); return; }
+      showEmpty(false);
+      updateCount(data.length);
+
+      data.forEach(h => {
+        const dur = calcDuration(h.start_time, h.end_time);
+        
+        const daysArr = String(h.day_of_week).split(',');
+        const badgesHtml = daysArr.map(d => {
+          const val = d.trim();
+          const col = DAY_COLORS[val] || { bg: 'rgba(255,255,255,0.1)', text: '#fff' };
+          const name = DAY_NAMES[parseInt(val, 10)] || val;
+          return `<span class="day-badge mb-1 mr-1" style="background:${col.bg};color:${col.text};">${escapeHTML(name)}</span>`;
+        }).join('');
+
+        const dayName = getDayName(h.day_of_week);
+        const tr = document.createElement('tr');
+        tr.className = 'table-row border-b border-white/10';
+        tr.innerHTML = `
+          <td class="px-6 py-3.5 text-white/70 text-xs font-mono">#${h.id}</td>
+          <td class="px-6 py-3.5 flex flex-wrap">
+            ${badgesHtml}
+          </td>
+          <td class="px-6 py-3.5 text-white font-semibold font-mono">${escapeHTML(h.start_time)}</td>
+          <td class="px-6 py-3.5 text-white font-semibold font-mono">${escapeHTML(h.end_time)}</td>
+          <td class="px-6 py-3.5 text-white/60 text-xs">${dur}</td>
+          <td class="px-6 py-3.5 text-center space-x-2">
+            <button onclick="openEditModal(${h.id},'${escapeHTML(String(h.day_of_week))}','${escapeHTML(h.start_time)}','${escapeHTML(h.end_time)}')"
+                    class="btn-action bg-amber-400 hover:bg-amber-500 text-slate-900 text-xs font-bold uppercase px-3 py-1.5 rounded-lg shadow">
+              Editar
+            </button>
+            <button onclick="openDeleteModal(${h.id},'${escapeHTML(dayName)} ${escapeHTML(h.start_time)}–${escapeHTML(h.end_time)}')"
+                    class="btn-action bg-red-500 hover:bg-red-600 text-white text-xs font-bold uppercase px-3 py-1.5 rounded-lg shadow">
+              Eliminar
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      renderCalendar(data);
+    }
+
+    const DAYS_ORDER_VALS = ['0', '1', '2', '3', '4', '5', '6'];
+
+    function renderCalendar(data) {
+      const tbody = document.getElementById('cal-tbody');
+      tbody.innerHTML = '';
+      const calEmpty = document.getElementById('cal-empty');
+
+      if (!data.length) { calEmpty.classList.remove('hidden'); return; }
+      calEmpty.classList.add('hidden');
+
+      const slots = [...new Set(data.map(h => h.start_time))].sort();
+
+      slots.forEach(slot => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-white/10';
+        let html = `<td class="px-4 py-2 text-white/60 font-mono text-xs whitespace-nowrap">${slot}</td>`;
+
+        DAYS_ORDER_VALS.forEach(dayVal => {
+          const match = data.find(h => String(h.day_of_week).split(',').map(s=>s.trim()).includes(dayVal) && h.start_time === slot);
+          if (match) {
+            const dayName = getDayName(match.day_of_week);
+            const col = DAY_COLORS[dayVal] || { bg: 'rgba(255,255,255,0.12)', text: '#fff' };
+            html += `
+              <td class="px-2 py-2 text-center">
+                <div class="cal-cell filled rounded-xl px-2 py-2 text-xs" style="background:${col.bg}; border:1px solid rgba(255,255,255,0.15);">
+                  <div class="text-white font-bold font-mono">${match.start_time}</div>
+                  <div class="text-white/50 text-[10px]">→ ${match.end_time}</div>
+                  <div class="flex justify-center gap-1 mt-1.5">
+                    <button onclick="openEditModal(${match.id},'${escapeHTML(String(match.day_of_week))}','${escapeHTML(match.start_time)}','${escapeHTML(match.end_time)}')"
+                            class="text-[10px] px-2 py-0.5 rounded bg-amber-400/80 text-slate-900 font-bold">✏</button>
+                    <button onclick="openDeleteModal(${match.id},'${escapeHTML(dayName)} ${escapeHTML(match.start_time)}–${escapeHTML(match.end_time)}')"
+                            class="text-[10px] px-2 py-0.5 rounded bg-red-500/70 text-white font-bold">✕</button>
+                  </div>
+                </div>
+              </td>`;
+          } else {
+            html += `<td class="px-2 py-2"><div class="cal-cell rounded-xl" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);"></div></td>`;
+          }
+        });
+
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateStats(data) {
+      document.getElementById('stat-total').textContent = data.length;
+      const dias = new Set(data.flatMap(h => String(h.day_of_week).split(',').map(s=>s.trim()))).size;
+      document.getElementById('stat-days').textContent = dias;
+      let totalMin = 0;
+      data.forEach(h => {
+        try {
+          const [sh, sm] = h.start_time.split(':').map(Number);
+          const [eh, em] = h.end_time.split(':').map(Number);
+          const d = (eh * 60 + em) - (sh * 60 + sm);
+          if (d > 0) totalMin += d;
+        } catch {}
+      });
+      document.getElementById('stat-hours').textContent = (totalMin / 60).toFixed(1) + 'h';
+    }
+
+    function filterTable() {
+      const q   = document.getElementById('search-input').value.toLowerCase();
+      const day = document.getElementById('filter-day').value;
+      const filtered = horarios.filter(h => {
+        const dayName = getDayName(h.day_of_week).toLowerCase();
+        const matchText = dayName.includes(q)
+          || h.start_time.includes(q)
+          || h.end_time.includes(q);
+        const matchDay = !day || String(h.day_of_week).split(',').map(s=>s.trim()).includes(day);
+        return matchText && matchDay;
+      });
+      renderTable(filtered);
+    }
+
+    function setView(v) {
+      currentView = v;
+      document.getElementById('view-table').classList.toggle('hidden', v !== 'table');
+      document.getElementById('view-calendar').classList.toggle('hidden', v !== 'calendar');
+      document.getElementById('btn-view-table').classList.toggle('active', v === 'table');
+      document.getElementById('btn-view-cal').classList.toggle('active', v === 'calendar');
+    }
+
+    function openCreateModal() {
+      document.getElementById('modal-subtitle').textContent = 'Crear Horario';
+      document.getElementById('modal-title').textContent = 'Nuevo Horario';
+      document.getElementById('form-id').value = '';
+      Array.from(document.getElementById('form-day').options).forEach(o => o.selected = false);
+      document.getElementById('form-start').value = '';
+      document.getElementById('form-end').value = '';
+      hideDurationPreview();
+      document.getElementById('modal-horario').classList.remove('hidden');
+    }
+
+    function openEditModal(id, day, start, end) {
+      document.getElementById('modal-subtitle').textContent = 'Editar Horario';
+      document.getElementById('modal-title').textContent = 'Modificar Horario';
+      document.getElementById('form-id').value = id;
+      const selectedDays = String(day).split(',').map(s => s.trim());
+      Array.from(document.getElementById('form-day').options).forEach(o => {
+        o.selected = selectedDays.includes(o.value);
+      });
+      document.getElementById('form-start').value = start;
+      document.getElementById('form-end').value = end;
+      updateDurationPreview();
+      document.getElementById('modal-horario').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-horario').classList.add('hidden');
+    }
+
+    document.addEventListener('change', e => {
+      if (e.target.id === 'form-start' || e.target.id === 'form-end') updateDurationPreview();
+    });
+    document.addEventListener('input', e => {
+      if (e.target.id === 'form-start' || e.target.id === 'form-end') updateDurationPreview();
+    });
+
+    function updateDurationPreview() {
+      const s = document.getElementById('form-start').value;
+      const e = document.getElementById('form-end').value;
+      const el = document.getElementById('duration-preview');
+      if (!s || !e) { hideDurationPreview(); return; }
+      const [sh, sm] = s.split(':').map(Number);
+      const [eh, em] = e.split(':').map(Number);
+      const diff = (eh * 60 + em) - (sh * 60 + sm);
+      if (diff <= 0) {
+        el.textContent = '⚠️ La hora fin debe ser mayor a la hora inicio';
+        el.classList.remove('hidden');
+        el.style.background = 'rgba(239,68,68,0.2)';
+        el.style.borderColor = 'rgba(239,68,68,0.4)';
+        return;
+      }
+      const hrs = Math.floor(diff / 60), min = diff % 60;
+      el.textContent = `⏱ Duración: ${hrs > 0 ? hrs + 'h ' : ''}${min > 0 ? min + 'min' : ''}`;
+      el.classList.remove('hidden');
+      el.style.background = '';
+      el.style.borderColor = '';
+    }
+    function hideDurationPreview() {
+      document.getElementById('duration-preview').classList.add('hidden');
+    }
+
+    async function submitHorario(e) {
+      e.preventDefault();
+      const id    = document.getElementById('form-id').value;
+      const selectDay = document.getElementById('form-day');
+      const selectedDaysValues = Array.from(selectDay.selectedOptions).map(o => o.value);
+      const dayValStr = selectedDaysValues.join(',');
+      const start = document.getElementById('form-start').value;
+      const end   = document.getElementById('form-end').value;
+      if (!dayValStr || !start || !end) return;
+
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      if ((eh * 60 + em) <= (sh * 60 + sm)) {
+        showToast('La hora fin debe ser mayor a la hora inicio', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-save');
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      try {
+        if (id) {
+          await PHorario.update(Number(id), dayValStr, start, end);
+          showToast('Horario actualizado correctamente');
+        } else {
+          await PHorario.create(dayValStr, start, end);
+          showToast('Horario creado correctamente');
+        }
+        closeModal();
+        await loadHorarios();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'GUARDAR';
+      }
+    }
+
+    function openDeleteModal(id, desc) {
+      deleteTargetId = id;
+      document.getElementById('delete-desc').textContent = desc;
+      document.getElementById('modal-delete').classList.remove('hidden');
+      document.getElementById('btn-confirm-delete').onclick = confirmDelete;
+    }
+    function closeDeleteModal() {
+      deleteTargetId = null;
+      document.getElementById('modal-delete').classList.add('hidden');
+    }
+    async function confirmDelete() {
+      if (!deleteTargetId) return;
+      const btn = document.getElementById('btn-confirm-delete');
+      btn.disabled = true;
+      btn.textContent = 'Eliminando...';
+      try {
+        await PHorario.delete(deleteTargetId);
+        showToast('Horario eliminado correctamente');
+        closeDeleteModal();
+        await loadHorarios();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Eliminar';
+      }
+    }
+
+    function setActiveNav(el) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      // Navigate based on text content
+      const text = el.textContent.trim().toLowerCase();
+      const routes = {
+        'inicio': '/home',
+        'gestionar roles': '/roles',
+        'solicitud de licencias': '/licencias',
+        'mis licencias': '/mis-licencias',
+        'historial': '/historial',
+        'gestionar grupos': '/grupos',
+        'gestión de materias': '/materias',
+        'configuración horarios': '/horarios',
+        'gestionar personal docente': '/teacher',
+        'asignación carga académica': '/carga-academica',
+        'historial de notificaciones': '/notificaciones'
+      };
+      if (routes[text]) {
+        window.location.href = routes[text];
+      }
+
+    }
+
+    function showLoading(show) {
+      document.getElementById('loading-state').classList.toggle('hidden', !show);
+    }
+    function showEmpty(show) {
+      document.getElementById('empty-state').classList.toggle('hidden', !show);
+    }
+    function updateCount(n) {
+      document.getElementById('count').textContent = n;
+    }
+    function calcDuration(start, end) {
+      try {
+        const [sh, sm] = start.split(':').map(Number);
+        const [eh, em] = end.split(':').map(Number);
+        const d = (eh * 60 + em) - (sh * 60 + sm);
+        if (d <= 0) return '—';
+        const h = Math.floor(d / 60), m = d % 60;
+        return (h ? h + 'h ' : '') + (m ? m + 'min' : '');
+      } catch { return '—'; }
+    }
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, m =>
+        ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])
+      );
+    }
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      const m = document.getElementById('toast-msg');
+      m.textContent = msg;
+      t.className = `fixed top-4 right-4 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-emerald-500'
+      }`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.add('hidden'), 3000);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closeModal(); closeDeleteModal(); }
+    });
+
+    loadHorarios();
+  </script>
+</body>
+</html>

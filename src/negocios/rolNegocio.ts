@@ -1,22 +1,22 @@
-import rolDato from "../datos/rolDato";
+import DRol from "../datos/rolDato";
 
-class RolNegocio {
+class NRol {
     async getAll() {
-        return await rolDato.getAll();
+        return await DRol.getAll();
     }
 
     async getByName(name: string) {
-        return await rolDato.getByName(name);
+        return await DRol.getByName(name);
     }
     async create(data: { description: string }) {
-        await rolDato.create(data);
+        await DRol.create(data);
     }
     async update(id: number, data: Partial<{ description: string }>) {
-        await rolDato.update(id, data);
+        await DRol.update(id, data);
     }
     async delete(id: number) {
-        await rolDato.delete(id);
+        await DRol.delete(id);
     }
 }
 
-export default new RolNegocio();
+export default new NRol();

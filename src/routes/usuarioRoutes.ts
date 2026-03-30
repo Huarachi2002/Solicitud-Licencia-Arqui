@@ -1,7 +1,8 @@
-import express, { Request, Response } from 'express';
-import usuarioPresentacion from '../presentacion/usuarioPresentacion';
+import express from 'express';
+import PUsuario from '../presentacion/usuarioPresentacion';
 const router = express.Router();
 
-router.post('/usuario/student', usuarioPresentacion.registerStudent);
+router.post('/student', PUsuario.registerStudent);
+router.post('/teacher', PUsuario.registerTeacher);
 
 export default router;

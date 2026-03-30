@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestionar Roles | Sistema Académico</title>
-  <meta name="description" content="Módulo para gestionar roles del sistema académico: crear, editar y eliminar roles." />
+  <title>Gestionar Materias | Sistema Académico</title>
+  <meta name="description" content="Módulo para gestionar materias del sistema académico: crear, editar y eliminar materias." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
@@ -72,9 +72,8 @@
       <p class="font-bold text-slate-900 text-sm uppercase tracking-wide">USERNAME</p>
       <p class="text-slate-700 text-xs mt-0.5">typeuser</p>
     </div>
-
     <nav class="flex-1 py-4 space-y-0.5 px-2">
-      <div class="nav-item active rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
            onclick="setActiveNav(this)">
         Gestionar Roles
       </div>
@@ -86,7 +85,7 @@
            onclick="setActiveNav(this)">
         Gestionar Grupos
       </div>
-      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+      <div class="nav-item active rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
            onclick="setActiveNav(this)">
         Gestión de Materias
       </div>
@@ -112,11 +111,11 @@
   <main class="flex-1 flex flex-col min-h-screen">
 
     <div class="bg-[#1565a8] px-8 py-5 flex items-center justify-between">
-      <h1 class="text-white text-2xl font-extrabold uppercase tracking-widest">Gestionar Roles</h1>
-      <button id="btn-nuevo-rol"
+      <h1 class="text-white text-2xl font-extrabold uppercase tracking-widest">Gestionar Materias</h1>
+      <button id="btn-nuevo-materia"
               class="btn-action bg-white text-[#1565a8] font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg shadow hover:bg-blue-50"
               onclick="openCreateModal()">
-        + Nuevo Rol
+        + Nueva Materia
       </button>
     </div>
 
@@ -129,11 +128,11 @@
       <div class="mb-5 flex items-center gap-3">
         <input id="search-input"
                type="text"
-               placeholder="Buscar rol..."
+               placeholder="Buscar materia..."
                oninput="filterTable()"
                class="w-64 bg-white/90 border border-white/30 text-slate-800 text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-slate-400"
         />
-        <span class="text-white/70 text-xs">(<span id="count">0</span> roles)</span>
+        <span class="text-white/70 text-xs">(<span id="count">0</span> materias)</span>
       </div>
 
       <div class="bg-white/10 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg border border-white/20">
@@ -141,17 +140,18 @@
           <thead>
             <tr class="bg-white/20 text-white uppercase text-xs tracking-wider">
               <th class="text-left px-6 py-3 font-semibold">ID</th>
-              <th class="text-left px-6 py-3 font-semibold">Descripción</th>
+              <th class="text-left px-6 py-3 font-semibold">Nombre Materia</th>
+              <th class="text-left px-6 py-3 font-semibold">Sigla</th>
               <th class="text-left px-6 py-3 font-semibold">Creado</th>
               <th class="text-center px-6 py-3 font-semibold">Acciones</th>
             </tr>
           </thead>
-          <tbody id="roles-tbody">
+          <tbody id="materias-tbody">
           </tbody>
         </table>
 
         <div id="empty-state" class="hidden text-center py-16">
-          <p class="text-white/60 text-sm">No hay roles registrados.</p>
+          <p class="text-white/60 text-sm">No hay materias registradas.</p>
         </div>
 
         <div id="loading-state" class="text-center py-12">
@@ -161,23 +161,32 @@
       </div>
 
     </div>
-  </main>
 
-  <div id="modal-rol" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+  <div id="modal-materia" class="hidden fixed inset-0 z-50 flex items-center justify-center">
     <div class="modal-overlay absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal()"></div>
 
     <div class="modal-box relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8">
-      <p id="modal-subtitle" class="text-white/70 text-xs uppercase tracking-widest mb-1">Crear Rol</p>
-      <h2 id="modal-title" class="text-white text-xl font-extrabold uppercase tracking-wide mb-6">Nuevo Rol</h2>
+      <p id="modal-subtitle" class="text-white/70 text-xs uppercase tracking-widest mb-1">Crear Materia</p>
+      <h2 id="modal-title" class="text-white text-xl font-extrabold uppercase tracking-wide mb-6">Nueva Materia</h2>
 
-      <form id="form-rol" onsubmit="submitRol(event)">
+      <form id="form-materia" onsubmit="submitMateria(event)">
         <input type="hidden" id="form-id" value="" />
 
-        <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Descripción</label>
-        <input id="form-description"
+        <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Nombre Materia</label>
+        <input id="form-name"
                type="text"
                required
-               placeholder="Ej: DOCENTE, ADMINISTRADOR..."
+               placeholder="Ej: INTRODUCCION A LA INFORMATICA, PROGRAMACION I"
+               oninput="this.value = this.value.toUpperCase()"
+               style="text-transform: uppercase;"
+               class="w-full bg-white text-slate-800 rounded-xl px-5 py-3 text-sm mb-6 focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-slate-400"
+        />
+
+        <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Sigla</label>
+        <input id="form-initials"
+               type="text"
+               required
+               placeholder="Ej: INF110, INF120"
                oninput="this.value = this.value.toUpperCase()"
                style="text-transform: uppercase;"
                class="w-full bg-white text-slate-800 rounded-xl px-5 py-3 text-sm mb-6 focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-slate-400"
@@ -188,12 +197,12 @@
                   id="btn-cancel"
                   onclick="closeModal()"
                   class="btn-action bg-white/20 hover:bg-white/30 text-white font-bold text-sm uppercase tracking-wider px-7 py-2.5 rounded-xl border border-white/30">
-            CANCEL
+            CANCELAR
           </button>
           <button type="submit"
                   id="btn-save"
                   class="btn-action bg-[#0d3b6e] hover:bg-[#0a2d57] text-white font-bold text-sm uppercase tracking-wider px-7 py-2.5 rounded-xl shadow-md">
-            SAVE
+            GUARDAR
           </button>
         </div>
       </form>
@@ -203,9 +212,9 @@
   <div id="modal-delete" class="hidden fixed inset-0 z-50 flex items-center justify-center">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
     <div class="relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-7">
-      <h2 class="text-white font-extrabold text-lg mb-2">¿Eliminar Rol?</h2>
+      <h2 class="text-white font-extrabold text-lg mb-2">¿Eliminar Materia?</h2>
       <p class="text-white/70 text-sm mb-6">
-        Esta acción eliminará el rol "<span id="delete-desc" class="text-white font-semibold"></span>". No se puede deshacer.
+        Esta acción eliminará la materia "<span id="delete-desc" class="text-white font-semibold"></span>". No se puede deshacer.
       </p>
       <div class="flex justify-end gap-3">
         <button onclick="closeDeleteModal()"
@@ -221,49 +230,49 @@
   </div>
 
   <script>
-    const API_BASE = '/api/rol';
+    const API_BASE = '/api/materia';
 
-    let roles = [];
+    let materias = [];
     let deleteTargetId = null;
 
-    const PRol = {
+    const PMateria = {
       async getAll() {
         const res = await fetch(`${API_BASE}/`);
-        if (!res.ok) throw new Error('Error al obtener roles');
+        if (!res.ok) throw new Error('Error al obtener materias');
         return await res.json();
       },
-      async create(description) {
+      async create(name, initials) {
         const res = await fetch(`${API_BASE}/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ description })
+          body: JSON.stringify({ name, initials })
         });
-        if (!res.ok) throw new Error('Error al crear rol');
+        if (!res.ok) throw new Error('Error al crear materia');
         return await res.json();
       },
-      async update(id, description) {
+      async update(id, name, initials) {
         const res = await fetch(`${API_BASE}/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ description })
+          body: JSON.stringify({ name, initials })
         });
-        if (!res.ok) throw new Error('Error al actualizar rol');
+        if (!res.ok) throw new Error('Error al actualizar materia');
         return await res.json();
       },
       async delete(id) {
         const res = await fetch(`${API_BASE}/${id}`, {
           method: 'DELETE'
         });
-        if (!res.ok) throw new Error('Error al eliminar rol');
+        if (!res.ok) throw new Error('Error al eliminar materia');
         return await res.json();
       }
     };
 
-    async function loadRoles() {
+    async function loadMaterias() {
       showLoading(true);
       try {
-        roles = await PRol.getAll();
-        renderTable(roles);
+        materias = await PMateria.getAll();
+        renderTable(materias);
       } catch (e) {
         showToast('No se pudo conectar con el servidor', 'error');
         showLoading(false);
@@ -273,7 +282,7 @@
 
     function renderTable(data) {
       showLoading(false);
-      const tbody = document.getElementById('roles-tbody');
+      const tbody = document.getElementById('materias-tbody');
       tbody.innerHTML = '';
 
       if (!data.length) {
@@ -284,22 +293,23 @@
       showEmpty(false);
       updateCount(data.length);
 
-      data.forEach(rol => {
+      data.forEach(materia => {
         const tr = document.createElement('tr');
         tr.className = 'table-row border-b border-white/10';
-        const fecha = rol.created_at
-          ? new Date(rol.created_at).toLocaleDateString('es-BO', { day:'2-digit', month:'short', year:'numeric' })
+        const fecha = materia.created_at
+          ? new Date(materia.created_at).toLocaleDateString('es-BO', { day:'2-digit', month:'short', year:'numeric' })
           : '—';
         tr.innerHTML = `
-          <td class="px-6 py-3.5 text-white/70 text-xs font-mono">#${rol.id}</td>
-          <td class="px-6 py-3.5 text-white font-semibold">${escapeHTML(rol.description)}</td>
+          <td class="px-6 py-3.5 text-white/70 text-xs font-mono">#${materia.id}</td>
+          <td class="px-6 py-3.5 text-white font-semibold">${escapeHTML(materia.name)}</td>
+          <td class="px-6 py-3.5 text-white/60 text-xs">${escapeHTML(materia.initials)}</td>
           <td class="px-6 py-3.5 text-white/60 text-xs">${fecha}</td>
           <td class="px-6 py-3.5 text-center space-x-2">
-            <button onclick="openEditModal(${rol.id}, '${escapeHTML(rol.description)}')"
+            <button onclick="openEditModal(${materia.id}, '${escapeHTML(materia.name)}', '${escapeHTML(materia.initials)}')"
                     class="btn-action bg-amber-400 hover:bg-amber-500 text-slate-900 text-xs font-bold uppercase px-3 py-1.5 rounded-lg shadow">
               Editar
             </button>
-            <button onclick="openDeleteModal(${rol.id}, '${escapeHTML(rol.description)}')"
+            <button onclick="openDeleteModal(${materia.id}, '${escapeHTML(materia.name)}')"
                     class="btn-action bg-red-500 hover:bg-red-600 text-white text-xs font-bold uppercase px-3 py-1.5 rounded-lg shadow">
               Eliminar
             </button>
@@ -311,35 +321,38 @@
 
     function filterTable() {
       const q = document.getElementById('search-input').value.toLowerCase();
-      const filtrados = roles.filter(r => r.description.toLowerCase().includes(q));
+      const filtrados = materias.filter(r => r.name.toLowerCase().includes(q));
       renderTable(filtrados);
     }
 
     function openCreateModal() {
-      document.getElementById('modal-subtitle').textContent = 'Crear Rol';
-      document.getElementById('modal-title').textContent = 'Nuevo Rol';
+      document.getElementById('modal-subtitle').textContent = 'Crear Materia';
+      document.getElementById('modal-title').textContent = 'Nueva Materia';
       document.getElementById('form-id').value = '';
-      document.getElementById('form-description').value = '';
-      document.getElementById('modal-rol').classList.remove('hidden');
+      document.getElementById('form-name').value = '';
+      document.getElementById('form-initials').value = '';
+      document.getElementById('modal-materia').classList.remove('hidden');
     }
 
-    function openEditModal(id, description) {
-      document.getElementById('modal-subtitle').textContent = 'Editar Rol';
-      document.getElementById('modal-title').textContent = 'Modificar Rol';
+    function openEditModal(id, name, initials) {
+      document.getElementById('modal-subtitle').textContent = 'Editar Materia';
+      document.getElementById('modal-title').textContent = 'Modificar Materia';
       document.getElementById('form-id').value = id;
-      document.getElementById('form-description').value = description;
-      document.getElementById('modal-rol').classList.remove('hidden');
+      document.getElementById('form-name').value = name;
+      document.getElementById('form-initials').value = initials;
+      document.getElementById('modal-materia').classList.remove('hidden');
     }
 
     function closeModal() {
-      document.getElementById('modal-rol').classList.add('hidden');
+      document.getElementById('modal-materia').classList.add('hidden');
     }
 
-    async function submitRol(e) {
+    async function submitMateria(e) {
       e.preventDefault();
       const id = document.getElementById('form-id').value;
-      const description = document.getElementById('form-description').value.trim().toUpperCase();
-      if (!description) return;
+      const name = document.getElementById('form-name').value.trim().toUpperCase();
+      const initials = document.getElementById('form-initials').value.trim().toUpperCase();
+      if (!name || !initials) return;
 
       const btn = document.getElementById('btn-save');
       btn.disabled = true;
@@ -347,25 +360,25 @@
 
       try {
         if (id) {
-          await PRol.update(Number(id), description);
-          showToast('Rol actualizado correctamente');
+          await PMateria.update(Number(id), name, initials);
+          showToast('Materia actualizada correctamente');
         } else {
-          await PRol.create(description);
-          showToast('Rol creado correctamente');
+          await PMateria.create(name, initials);
+          showToast('Materia creada correctamente');
         }
         closeModal();
-        await loadRoles();
+        await loadMaterias();
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
         btn.disabled = false;
-        btn.textContent = 'SAVE';
+        btn.textContent = 'GUARDAR';
       }
     }
 
-    function openDeleteModal(id, description) {
+    function openDeleteModal(id, name) {
       deleteTargetId = id;
-      document.getElementById('delete-desc').textContent = description;
+      document.getElementById('delete-desc').textContent = name;
       document.getElementById('modal-delete').classList.remove('hidden');
       document.getElementById('btn-confirm-delete').onclick = confirmDelete;
     }
@@ -381,10 +394,10 @@
       btn.disabled = true;
       btn.textContent = 'Eliminando...';
       try {
-        await PRol.delete(deleteTargetId);
-        showToast('Rol eliminado correctamente');
+        await PMateria.delete(deleteTargetId);
+        showToast('Materia eliminada correctamente');
         closeDeleteModal();
-        await loadRoles();
+        await loadMaterias();
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
@@ -450,7 +463,7 @@
       }
     });
 
-    loadRoles();
+    loadMaterias();
   </script>
 </body>
 </html>

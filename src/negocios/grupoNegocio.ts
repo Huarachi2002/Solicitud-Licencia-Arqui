@@ -1,21 +1,18 @@
-import grupoDato from "../datos/grupoDato";
+import DGrupo from "../datos/grupoDato";
 
-class GrupoNegocio {
+class NGrupo {
     async getAll() {
-        return await grupoDato.getAll();
+        return await DGrupo.getAll();
     }
-    async getById(id: number) {
-        return await grupoDato.getById(id);
+    async create(data: { name: string, ids_materia: number[], ids_horario: number[] }) {
+        return await DGrupo.create(data);
     }
-    async create(data: { name: string, id_materia: number, id_horario: number }) {
-        return await grupoDato.create(data);
-    }
-    async update(id: number, data: Partial<{ name: string, id_materia: number }>) {
-        return await grupoDato.update(id, data);
+    async update(id: number, data: Partial<{ name: string, ids_materia: number[], ids_horario: number[] }>) {
+        return await DGrupo.update(id, data);
     }
     async delete(id: number) {
-        return await grupoDato.delete(id);
+        return await DGrupo.delete(id);
     }
 }
 
-export default new GrupoNegocio();
+export default new NGrupo();
