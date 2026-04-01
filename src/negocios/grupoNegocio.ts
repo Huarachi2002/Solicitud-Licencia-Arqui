@@ -13,6 +13,10 @@ class NGrupo {
     async delete(id: number) {
         return await DGrupo.delete(id);
     }
+
+    async getGrupoByMateria(id_materia: number) {
+        return await DGrupo.getGrupoByMateria(id_materia);
+    }
 }
 
 export default new NGrupo();

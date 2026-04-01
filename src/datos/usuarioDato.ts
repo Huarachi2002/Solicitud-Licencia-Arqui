@@ -12,6 +12,18 @@ class DUsuario {
             data
         });
     }
+
+    async login(data: { num_register: string, password: string }) {
+        return await prisma.usuario.findFirst({
+            where: {
+                num_register: data.num_register,
+                password: data.password
+            },
+            include: {
+                rol: true
+            }
+        });
+    }
 }
 
 export default new DUsuario();

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solicitud de Licencias | Sistema Académico</title>
+  <meta name="description" content="Módulo de solicitud de licencias para docentes y estudiantes del sistema académico UAGRM." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+
+    .nav-item {
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover {
+      background-color: rgba(255,255,255,0.15);
+      border-left-color: white;
+      transform: translateX(2px);
+    }
+    .nav-item.active {
+      background-color: rgba(255,255,255,0.2);
+      border-left-color: white;
+    }
+
+    .modal-overlay { animation: fadeIn 0.2s ease; }
+    .modal-box     { animation: slideUp 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn-action { transition: all 0.15s ease; }
+    .btn-action:hover  { transform: scale(1.03); }
+    .btn-action:active { transform: scale(0.97); }
+
+    #toast { transition: opacity 0.3s ease, transform 0.3s ease; }
+    #toast.hidden { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+
+    .tab-pill { transition: all 0.2s ease; cursor: pointer; }
+    .tab-pill.active { background-color: rgba(255,255,255,0.25); color: white; }
+
+    .badge-pendiente { background: rgba(245,158,11,0.25); color: #fcd34d; }
+    .badge-aprobada  { background: rgba(16,185,129,0.25);  color: #6ee7b7; }
+    .badge-rechazada { background: rgba(239,68,68,0.25);   color: #fca5a5; }
+
+    .table-row { transition: background-color 0.15s ease; }
+    .table-row:hover { background-color: rgba(59,130,246,0.08); }
+
+    /* Icono ✓/✗ circular */
+    .estado-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 1rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .estado-aprobado  { background: rgba(16,185,129,0.2); color: #34d399; }
+    .estado-rechazado { background: rgba(239,68,68,0.2);  color: #f87171; }
+    .estado-pendiente { background: rgba(245,158,11,0.2); color: #fbbf24; }
+
+    /* Grid: MATERIA | GRUPO | icono | eliminar  (sin columna horario) */
+    .materia-row {
+      display: grid;
+      grid-template-columns: 1fr 120px 28px 28px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .form-input {
+      background: white;
+      color: #1e293b;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      outline: none;
+      border: none;
+      transition: box-shadow 0.15s;
+      width: 100%;
+    }
+    .form-input:focus { box-shadow: 0 0 0 3px rgba(255,255,255,0.4); }
+    .form-input:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
+
+    /* Input tipo file oculto con label estilizado */
+    .file-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      color: #1e293b;
+      border-radius: 10px;
+      padding: 7px 14px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .file-label:hover { box-shadow: 0 0 0 3px rgba(255,255,255,0.4); }
+    .file-label span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="w-56 min-h-screen flex-shrink-0 flex flex-col"
+         style="background: linear-gradient(180deg, #7ec8e3 0%, #5bb5d5 100%);">
+
+    <div class="px-5 pt-6 pb-4 border-b border-white/20">
+      <p id="sidebar-username" class="font-bold text-slate-900 text-sm uppercase tracking-wide">USERNAME</p>
+      <p id="sidebar-role"     class="text-slate-700 text-xs mt-0.5">typeuser</p>
+    </div>
+
+    <nav class="flex-1 py-4 space-y-0.5 px-2">
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">Inicio</div>
+      <div class="nav-item active rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">Solicitud de Licencias</div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">Mis Licencias</div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="setActiveNav(this)">Historial</div>
+    </nav>
+
+    <!-- Botón Cerrar sesión -->
+    <div class="px-3 pb-5">
+      <button onclick="logout()"
+              class="w-full text-left px-3 py-2 text-xs font-bold text-red-700 uppercase tracking-wide rounded hover:bg-red-100/30 transition-colors">
+        ↩ Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <main class="flex-1 flex flex-col min-h-screen">
+
+    <div class="bg-[#1565a8] px-8 py-5 flex items-center justify-between">
+      <h1 class="text-white text-2xl font-extrabold uppercase tracking-widest">Solicitud de Licencias</h1>
+      <button id="btn-nueva-solicitud"
+              class="btn-action bg-white text-[#1565a8] font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg shadow hover:bg-blue-50"
+              onclick="openCreateModal()">
+        + Nueva Solicitud
+      </button>
+    </div>
+
+    <div class="flex-1 bg-[#1e7fc0] p-8">
+
+      <!-- Toast -->
+      <div id="toast" class="hidden fixed top-4 right-4 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg">
+        <span id="toast-msg"></span>
+      </div>
+
+      <!-- Tabs -->
+      <div class="mb-5 flex items-center gap-3">
+        <div class="flex bg-white/10 rounded-xl p-1 gap-1">
+          <div id="tab-todas"     class="tab-pill active text-white/80 text-xs font-bold uppercase tracking-wide px-4 py-1.5 rounded-lg"
+               onclick="switchTab('todas')">Todas</div>
+          <div id="tab-pendiente" class="tab-pill text-white/60 text-xs font-bold uppercase tracking-wide px-4 py-1.5 rounded-lg"
+               onclick="switchTab('pendiente')">Pendientes</div>
+          <div id="tab-aprobada"  class="tab-pill text-white/60 text-xs font-bold uppercase tracking-wide px-4 py-1.5 rounded-lg"
+               onclick="switchTab('aprobada')">Aprobadas</div>
+          <div id="tab-rechazada" class="tab-pill text-white/60 text-xs font-bold uppercase tracking-wide px-4 py-1.5 rounded-lg"
+               onclick="switchTab('rechazada')">Rechazadas</div>
+        </div>
+        <span class="text-white/60 text-xs">(<span id="count">0</span> solicitudes)</span>
+      </div>
+
+      <!-- Tabla -->
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg border border-white/20">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-white/20 text-white uppercase text-xs tracking-wider">
+              <th class="text-left px-6 py-3 font-semibold">ID</th>
+              <th class="text-left px-6 py-3 font-semibold">Fecha Inicio</th>
+              <th class="text-left px-6 py-3 font-semibold">Fecha Fin</th>
+              <th class="text-left px-6 py-3 font-semibold">Motivo</th>
+              <th class="text-left px-6 py-3 font-semibold">Grupos</th>
+              <th class="text-center px-6 py-3 font-semibold">Estado</th>
+              <th class="text-center px-6 py-3 font-semibold">Docs</th>
+            </tr>
+          </thead>
+          <tbody id="licencias-tbody"></tbody>
+        </table>
+
+        <div id="empty-state" class="hidden text-center py-16">
+          <p class="text-white/60 text-sm">No hay solicitudes registradas.</p>
+        </div>
+        <div id="loading-state" class="text-center py-12">
+          <div class="inline-block w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-white/70 text-xs mt-2">Cargando...</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ══ MODAL CREAR SOLICITUD ══ -->
+  <div id="modal-licencia" class="hidden fixed inset-0 z-50 flex items-start justify-center pt-6 pb-6">
+    <div class="modal-overlay absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
+
+    <div class="modal-box relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-xl mx-4 p-8 overflow-y-auto max-h-[92vh]">
+
+      <p class="text-white/60 text-xs uppercase tracking-widest mb-1">Crear Solicitud</p>
+      <h2 class="text-white text-xl font-extrabold uppercase tracking-wide mb-6">Solicitud de Licencias</h2>
+
+      <form id="form-licencia" onsubmit="submitLicencia(event)">
+
+        <!-- Fechas -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-white/70 text-[10px] uppercase tracking-widest mb-1.5">Fecha de Inicio</label>
+            <input id="form-start-date" type="date" required class="form-input" />
+          </div>
+          <div>
+            <label class="block text-white/70 text-[10px] uppercase tracking-widest mb-1.5">Fecha de Fin</label>
+            <input id="form-end-date" type="date" required class="form-input" />
+          </div>
+        </div>
+
+        <!-- Motivo -->
+        <div class="mb-5">
+          <label class="block text-white/70 text-[10px] uppercase tracking-widest mb-1.5">Motivo / Razón</label>
+          <textarea id="form-reason" rows="2" required
+                    placeholder="Describa el motivo de la licencia..."
+                    class="form-input resize-none"></textarea>
+        </div>
+
+        <!-- ── MATERIAS AFECTADAS ── -->
+        <p class="text-white/80 text-xs uppercase tracking-widest font-semibold mb-3">Materias Afectadas</p>
+
+        <!-- Cabecera -->
+        <div class="materia-row mb-2 px-1">
+          <span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Materia</span>
+          <span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Grupo</span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <div id="materias-container" class="space-y-2 mb-3"></div>
+
+        <button type="button" onclick="addMateriaRow()"
+                class="btn-action text-white/60 hover:text-white text-xs uppercase tracking-wider border border-white/20 hover:border-white/50 px-4 py-1.5 rounded-lg mb-5 transition-colors">
+          + Añadir materia
+        </button>
+
+        <!-- ── DOCUMENTOS ── -->
+        <p class="text-white/80 text-xs uppercase tracking-widest font-semibold mb-3">Documentos</p>
+        <p class="text-white/40 text-[10px] mb-3 italic">Seleccione los archivos desde su dispositivo. La ruta se guardará como referencia.</p>
+
+        <div class="space-y-2 mb-6">
+          <!-- Doc 1 (obligatorio) -->
+          <div class="flex items-center gap-2">
+            <label class="file-label" for="file-doc-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+              </svg>
+              <span id="file-doc-1-name" class="text-slate-400">Documento 1 (obligatorio)</span>
+            </label>
+            <input id="file-doc-1" type="file" class="hidden" onchange="onFileChange(this, '1')" />
+            <span id="doc1-estado" class="estado-icon estado-pendiente">·</span>
+          </div>
+          <!-- Doc 2 -->
+          <div class="flex items-center gap-2">
+            <label class="file-label" for="file-doc-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+              </svg>
+              <span id="file-doc-2-name" class="text-slate-400">Documento 2 (opcional)</span>
+            </label>
+            <input id="file-doc-2" type="file" class="hidden" onchange="onFileChange(this, '2')" />
+            <span id="doc2-estado" class="estado-icon estado-pendiente">·</span>
+          </div>
+          <!-- Doc 3 -->
+          <div class="flex items-center gap-2">
+            <label class="file-label" for="file-doc-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+              </svg>
+              <span id="file-doc-3-name" class="text-slate-400">Documento 3 (opcional)</span>
+            </label>
+            <input id="file-doc-3" type="file" class="hidden" onchange="onFileChange(this, '3')" />
+            <span id="doc3-estado" class="estado-icon estado-pendiente">·</span>
+          </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="flex justify-end gap-3">
+          <button type="button" onclick="closeModal()"
+                  class="btn-action bg-white text-[#1565a8] font-bold text-sm uppercase tracking-wider px-8 py-2.5 rounded-xl shadow">
+            CANCEL
+          </button>
+          <button type="submit" id="btn-save"
+                  class="btn-action bg-[#0d3b6e] hover:bg-[#0a2d57] text-white font-bold text-sm uppercase tracking-wider px-8 py-2.5 rounded-xl shadow-md">
+            SAVE
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══ MODAL DETALLE ══ -->
+  <div id="modal-detalle" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDetalleModal()"></div>
+    <div class="modal-box relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8">
+      <p class="text-white/60 text-xs uppercase tracking-widest mb-1">Solicitud #<span id="det-id"></span></p>
+      <h2 class="text-white text-lg font-extrabold uppercase tracking-wide mb-5">Detalle de Licencia</h2>
+
+      <div class="space-y-3 text-sm text-white/80">
+        <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Estado:</span><span id="det-estado"></span></div>
+        <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Inicio:</span><span id="det-start"></span></div>
+        <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Fin:</span><span id="det-end"></span></div>
+        <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Motivo:</span><span id="det-reason" class="flex-1"></span></div>
+        <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Documento 1:</span><span id="det-doc1" class="break-all flex-1 text-sky-300 text-xs"></span></div>
+        <div class="flex gap-2 hidden" id="det-doc2-row"><span class="font-semibold text-white/50 w-28">Documento 2:</span><span id="det-doc2" class="break-all flex-1 text-sky-300 text-xs"></span></div>
+        <div class="flex gap-2 hidden" id="det-doc3-row"><span class="font-semibold text-white/50 w-28">Documento 3:</span><span id="det-doc3" class="break-all flex-1 text-sky-300 text-xs"></span></div>
+      </div>
+
+      <div class="flex justify-end mt-6">
+        <button onclick="closeDetalleModal()"
+                class="btn-action bg-white/20 hover:bg-white/30 text-white font-bold text-sm uppercase tracking-wider px-6 py-2.5 rounded-xl border border-white/30">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ════ CONSTANTES ════ */
+    const API_LICENCIA = '/api/licencia';
+    const API_MATERIA  = '/api/materia';
+
+    /* ════ ESTADO GLOBAL ════ */
+    let licencias    = [];
+    let materiasList = [];
+    let currentTab   = 'todas';
+    let rowCount     = 0;
+    let session      = null;
+
+    const ESTADO       = { 0: 'Pendiente', 1: 'Aprobada', 2: 'Rechazada' };
+    const ESTADO_CLASS = { 0: 'badge-pendiente', 1: 'badge-aprobada', 2: 'badge-rechazada' };
+
+    /* ════ SESIÓN ════ */
+    function initSession() {
+      const raw = localStorage.getItem('session');
+      if (!raw) { window.location.href = '/login'; return; }
+      try {
+        session = JSON.parse(raw);
+        document.getElementById('sidebar-username').textContent = session.name_full || 'Usuario';
+        document.getElementById('sidebar-role').textContent     = session.rol       || '';
+      } catch {
+        localStorage.removeItem('session');
+        window.location.href = '/login';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('session');
+      window.location.href = '/login';
+    }
+
+    /* ════ CARGA INICIAL ════ */
+    async function loadInitialData() {
+      initSession();
+      showLoading(true);
+      try {
+        const [resLic, resMat] = await Promise.allSettled([
+          fetch(API_LICENCIA).then(r => r.ok ? r.json() : Promise.reject()),
+          fetch(API_MATERIA ).then(r => r.ok ? r.json() : Promise.reject()),
+        ]);
+        licencias    = resLic.status === 'fulfilled' ? resLic.value : [];
+        materiasList = resMat.status === 'fulfilled' ? resMat.value : [];
+        renderTable(filterByTab(licencias));
+      } catch {
+        showToast('No se pudo conectar con el servidor', 'error');
+        showLoading(false);
+        showEmpty(true);
+      }
+    }
+
+    /* ════ TABLA ════ */
+    function filterByTab(data) {
+      if (currentTab === 'todas') return data;
+      const map = { pendiente: 0, aprobada: 1, rechazada: 2 };
+      return data.filter(l => l.state === map[currentTab]);
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-pill').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      renderTable(filterByTab(licencias));
+    }
+
+    function renderTable(data) {
+      showLoading(false);
+      const tbody = document.getElementById('licencias-tbody');
+      tbody.innerHTML = '';
+      if (!data.length) { showEmpty(true); updateCount(0); return; }
+      showEmpty(false);
+      updateCount(data.length);
+
+      data.forEach(lic => {
+        const tr = document.createElement('tr');
+        tr.className = 'table-row border-b border-white/10 cursor-pointer';
+        tr.onclick = () => openDetalleModal(lic);
+
+        const startStr  = lic.start_date ? new Date(lic.start_date).toLocaleDateString('es-BO') : '—';
+        const endStr    = lic.end_date   ? new Date(lic.end_date).toLocaleDateString('es-BO')   : '—';
+        const estadoCls = ESTADO_CLASS[lic.state] ?? 'badge-pendiente';
+        const estadoTxt = ESTADO[lic.state]       ?? 'Pendiente';
+
+        const gruposStr = lic.licencia_detalles && lic.licencia_detalles.length
+          ? lic.licencia_detalles.map(d =>
+              `<span class="inline-block bg-white/15 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full mr-1">${escapeHTML(d.grupo?.name ?? '—')}</span>`
+            ).join('')
+          : '<span class="text-white/40 italic text-xs">—</span>';
+
+        const docsCount = [lic.url_attached_1, lic.url_attached_2, lic.url_attached_3].filter(Boolean).length;
+
+        tr.innerHTML = `
+          <td class="px-6 py-3.5 text-white/60 text-xs font-mono">#${lic.id}</td>
+          <td class="px-6 py-3.5 text-white/90 text-xs">${startStr}</td>
+          <td class="px-6 py-3.5 text-white/90 text-xs">${endStr}</td>
+          <td class="px-6 py-3.5 text-white/80 text-xs max-w-[160px] truncate">${escapeHTML(lic.reason ?? '')}</td>
+          <td class="px-6 py-3.5 text-xs">${gruposStr}</td>
+          <td class="px-6 py-3.5 text-center">
+            <span class="inline-block text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full ${estadoCls}">${estadoTxt}</span>
+          </td>
+          <td class="px-6 py-3.5 text-center text-white/60 text-xs">
+            <span class="inline-flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+              </svg>${docsCount}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ════ MODAL CREAR ════ */
+    function openCreateModal() {
+      document.getElementById('form-licencia').reset();
+      document.getElementById('materias-container').innerHTML = '';
+      rowCount = 0;
+      resetFileLabels();
+      addMateriaRow();
+      document.getElementById('modal-licencia').classList.remove('hidden');
+    }
+    function closeModal() {
+      document.getElementById('modal-licencia').classList.add('hidden');
+    }
+
+    /* ── Filas Materia → Grupo (sin horario) ── */
+    function addMateriaRow() {
+      rowCount++;
+      const id = rowCount;
+      const container = document.getElementById('materias-container');
+
+      const matOpts = materiasList.map(m =>
+        `<option value="${m.id}">${escapeHTML(m.name)}</option>`
+      ).join('');
+
+      const div = document.createElement('div');
+      div.id = `mat-row-${id}`;
+      div.className = 'materia-row';
+      div.innerHTML = `
+        <select id="sel-mat-${id}" class="form-input" onchange="onMateriaChange(${id})">
+          <option value="">— Materia —</option>
+          ${matOpts}
+        </select>
+        <select id="sel-gru-${id}" class="form-input" disabled onchange="updateMatRowIcon(${id})">
+          <option value="">— Grupo —</option>
+        </select>
+        <span id="icon-row-${id}" class="estado-icon estado-rechazado">✗</span>
+        <button type="button" onclick="removeMateriaRow(${id})"
+                class="estado-icon hover:bg-white/20 transition-colors text-white/40 hover:text-white text-base leading-none">×</button>
+      `;
+      container.appendChild(div);
+    }
+
+    async function onMateriaChange(id) {
+      const matSel = document.getElementById(`sel-mat-${id}`);
+      const gruSel = document.getElementById(`sel-gru-${id}`);
+      const matId  = matSel.value;
+
+      gruSel.innerHTML = '<option value="">Cargando...</option>';
+      gruSel.disabled = true;
+      updateMatRowIcon(id);
+
+      if (!matId) {
+        gruSel.innerHTML = '<option value="">— Grupo —</option>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_LICENCIA}/materia/${matId}/grupos`);
+        if (!res.ok) throw new Error();
+        const grupos = await res.json();
+
+        gruSel.innerHTML = '<option value="">— Grupo —</option>' +
+          grupos.map(g => `<option value="${g.id}">${escapeHTML(g.name)}</option>`).join('');
+        gruSel.disabled = grupos.length === 0;
+        if (grupos.length === 0) {
+          gruSel.innerHTML = '<option value="">Sin grupos disponibles</option>';
+        }
+      } catch {
+        gruSel.innerHTML = '<option value="">Error al cargar</option>';
+        gruSel.disabled = true;
+      }
+      updateMatRowIcon(id);
+    }
+
+    function updateMatRowIcon(id) {
+      const mat = document.getElementById(`sel-mat-${id}`)?.value;
+      const gru = document.getElementById(`sel-gru-${id}`)?.value;
+      const icon = document.getElementById(`icon-row-${id}`);
+      if (!icon) return;
+      if (mat && gru) {
+        icon.className = 'estado-icon estado-aprobado';
+        icon.textContent = '✓';
+      } else {
+        icon.className = 'estado-icon estado-rechazado';
+        icon.textContent = '✗';
+      }
+    }
+
+    function removeMateriaRow(id) {
+      const el = document.getElementById(`mat-row-${id}`);
+      if (el) el.remove();
+    }
+
+    /* ── Archivos ── */
+    function onFileChange(input, num) {
+      const nameEl = document.getElementById(`file-doc-${num}-name`);
+      const iconEl = document.getElementById(`doc${num}-estado`);
+      if (input.files && input.files[0]) {
+        nameEl.textContent = input.files[0].name;
+        nameEl.classList.remove('text-slate-400');
+        nameEl.classList.add('text-slate-700');
+        iconEl.className = 'estado-icon estado-aprobado';
+        iconEl.textContent = '✓';
+      } else {
+        nameEl.textContent = `Documento ${num} ${num === '1' ? '(obligatorio)' : '(opcional)'}`;
+        nameEl.classList.add('text-slate-400');
+        nameEl.classList.remove('text-slate-700');
+        iconEl.className = 'estado-icon estado-pendiente';
+        iconEl.textContent = '·';
+      }
+    }
+
+    function resetFileLabels() {
+      ['1','2','3'].forEach(n => {
+        const nameEl = document.getElementById(`file-doc-${n}-name`);
+        const iconEl = document.getElementById(`doc${n}-estado`);
+        nameEl.textContent = `Documento ${n} ${n === '1' ? '(obligatorio)' : '(opcional)'}`;
+        nameEl.className = 'text-slate-400';
+        iconEl.className = 'estado-icon estado-pendiente';
+        iconEl.textContent = '·';
+        const fileInput = document.getElementById(`file-doc-${n}`);
+        if (fileInput) fileInput.value = '';
+      });
+    }
+
+    /* ── Submit ── */
+    async function submitLicencia(e) {
+      e.preventDefault();
+
+      const startDate = document.getElementById('form-start-date').value;
+      const endDate   = document.getElementById('form-end-date').value;
+      const reason    = document.getElementById('form-reason').value.trim();
+      const fileDoc1  = document.getElementById('file-doc-1').files[0];
+      const fileDoc2  = document.getElementById('file-doc-2').files[0];
+      const fileDoc3  = document.getElementById('file-doc-3').files[0];
+
+      if (!fileDoc1) { showToast('El documento 1 es obligatorio', 'error'); return; }
+
+      // Recopilar grupos
+      const grupoIds = [];
+      document.querySelectorAll('.materia-row').forEach(row => {
+        const gruSel = row.querySelector('select:nth-child(2)');
+        if (gruSel && gruSel.value) grupoIds.push(Number(gruSel.value));
+      });
+
+      const body = {
+        id_usuario_solicitante: session?.id ?? 1,
+        start_date:    new Date(startDate).toISOString(),
+        end_date:      new Date(endDate).toISOString(),
+        reason,
+        url_attached_1: fileDoc1.name,      // ruta/nombre del archivo
+        ...(fileDoc2 && { url_attached_2: fileDoc2.name }),
+        ...(fileDoc3 && { url_attached_3: fileDoc3.name }),
+        grupos: grupoIds
+      };
+
+      const btn = document.getElementById('btn-save');
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      try {
+        const res = await fetch(API_LICENCIA, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error('Error al crear la solicitud');
+        showToast('✓ Solicitud creada correctamente');
+        closeModal();
+        await loadInitialData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'SAVE';
+      }
+    }
+
+    /* ════ MODAL DETALLE ════ */
+    function openDetalleModal(lic) {
+      document.getElementById('det-id').textContent     = lic.id;
+      document.getElementById('det-start').textContent  = lic.start_date ? new Date(lic.start_date).toLocaleDateString('es-BO') : '—';
+      document.getElementById('det-end').textContent    = lic.end_date   ? new Date(lic.end_date).toLocaleDateString('es-BO')   : '—';
+      document.getElementById('det-reason').textContent = lic.reason ?? '—';
+
+      const estadoCls = ESTADO_CLASS[lic.state] ?? 'badge-pendiente';
+      const estadoTxt = ESTADO[lic.state]       ?? 'Pendiente';
+      document.getElementById('det-estado').innerHTML =
+        `<span class="inline-block text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full ${estadoCls}">${estadoTxt}</span>`;
+
+      setDetDoc('det-doc1', null,          lic.url_attached_1);
+      setDetDoc('det-doc2', 'det-doc2-row', lic.url_attached_2);
+      setDetDoc('det-doc3', 'det-doc3-row', lic.url_attached_3);
+
+      document.getElementById('modal-detalle').classList.remove('hidden');
+    }
+
+    function setDetDoc(spanId, rowId, val) {
+      const el  = document.getElementById(spanId);
+      const row = rowId ? document.getElementById(rowId) : null;
+      if (val) {
+        el.textContent = val;
+        if (row) row.classList.remove('hidden');
+      } else {
+        el.textContent = '—';
+        if (row) row.classList.add('hidden');
+      }
+    }
+
+    function closeDetalleModal() {
+      document.getElementById('modal-detalle').classList.add('hidden');
+    }
+
+    /* ════ SIDEBAR NAV ════ */
+    function setActiveNav(el) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      const text = el.textContent.trim().toLowerCase();
+      const routes = {
+        'inicio': '/home',
+        'solicitud de licencias': '/licencias',
+        'mis licencias': '/mis-licencias',
+        'historial': '/historial',
+      };
+      if (routes[text]) window.location.href = routes[text];
+    }
+
+    /* ════ HELPERS ════ */
+    function showLoading(show) { document.getElementById('loading-state').classList.toggle('hidden', !show); }
+    function showEmpty(show)   { document.getElementById('empty-state').classList.toggle('hidden', !show); }
+    function updateCount(n)    { document.getElementById('count').textContent = n; }
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, m =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
+      );
+    }
+
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      const m = document.getElementById('toast-msg');
+      m.textContent = msg;
+      t.className = `fixed top-4 right-4 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-emerald-500'
+      }`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.add('hidden'), 3200);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closeModal(); closeDetalleModal(); }
+    });
+
+    loadInitialData();
+  </script>
+</body>
+</html>

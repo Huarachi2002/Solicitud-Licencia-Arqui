@@ -59,6 +59,18 @@ class DGrupo {
             where: { id }
         });
     }
+
+    async getGrupoByMateria(id_materia: number) {
+        return await prisma.grupo.findMany({
+            where: {
+                materias: {
+                    some: {
+                        id_materia: id_materia
+                    }
+                }
+            }
+        });
+    }
 }
 
 export default new DGrupo();

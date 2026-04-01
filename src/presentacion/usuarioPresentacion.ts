@@ -64,6 +64,31 @@ class PUsuario {
             return undefined;
         }
     }
+
+    login = async (req: Request, res: Response) => {
+        try {
+            const { num_register, password } = req.body;
+            const usuario = await NUsuario.login({ num_register, password });
+            if (!usuario) {
+                return res.status(404).json({ success: false, message: 'Usuario no encontrado o contraseña incorrecta' });
+            }
+            res.status(200).json({
+                success: true,
+                message: 'Usuario logueado exitosamente',
+                data: {
+                    id: usuario.id,
+                    name_full: usuario.name_full,
+                    num_register: usuario.num_register,
+                    mail: usuario.mail,
+                    id_rol: usuario.id_rol,
+                    rol: usuario.rol?.description ?? ''
+                }
+            });
+        } catch (error: any) {
+            console.log("Error al loguear usuario: ", error.message);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }
 
 export default new PUsuario();

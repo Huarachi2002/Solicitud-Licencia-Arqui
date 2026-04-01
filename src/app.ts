@@ -47,6 +47,14 @@ app.get('/home', (req, res) => {
     res.redirect('/home.html')
 })
 
+app.get('/licencias', (req, res) => {
+    res.redirect('/gestionar-licencias.html')
+})
+
+app.get('/login', (req, res) => {
+    res.redirect('/login.html')
+})
+
 app.use('/api/licencia', licenciaRoutes);
 app.use('/api/usuario', usuarioRoutes);
 app.use('/api/grupo', grupoRoutes);
