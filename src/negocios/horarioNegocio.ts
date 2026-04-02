@@ -4,10 +4,10 @@ class NHorario {
     async getAll() {
         return await DHorario.getAll();
     }
-    async create(data: { day_of_week: number, start_time: string, end_time: string }) {
+    async create(data: { day_of_week: string, start_time: string, end_time: string }) {
         return await DHorario.create(data);
     }
-    async update(id: number, data: Partial<{ day_of_week: number, start_time: string, end_time: string }>) {
+    async update(id: number, data: Partial<{ day_of_week: string, start_time: string, end_time: string }>) {
         return await DHorario.update(id, data);
     }
     async delete(id: number) {

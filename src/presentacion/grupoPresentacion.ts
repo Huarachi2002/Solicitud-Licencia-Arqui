@@ -27,10 +27,10 @@ class PGrupo {
 
     async create(req: Request, res: Response) {
         try {
-            const { name, materias, horarios } = req.body;
+            const { name, materia, horarios } = req.body;
             const grupo = await NGrupo.create({
                 name,
-                ids_materia: materias || [],
+                id_materia: materia,
                 ids_horario: horarios || []
             });
             return res.status(201).json(grupo);
@@ -43,10 +43,10 @@ class PGrupo {
     async update(req: Request, res: Response) {
         try {
             const id = parseInt(req.params.id as string);
-            const { name, materias, horarios } = req.body;
+            const { name, materia, horarios } = req.body;
             const grupo = await NGrupo.update(id, {
                 name,
-                ids_materia: materias || [],
+                id_materia: materia,
                 ids_horario: horarios || []
             });
             return res.status(200).json(grupo);

@@ -35,31 +35,19 @@ model Usuario {
 
 model Materia {
   id Int @id @default(autoincrement())
+  grupos Grupo[]
   name String
   initials String
-  grupos Grupo_Materia[]
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
 
-model Grupo_Materia {
-  id Int @id @default(autoincrement())
-  id_grupo Int
-  grupo Grupo @relation(fields: [id_grupo], references: [id])
-  id_materia Int
-  materia Materia @relation(fields: [id_materia], references: [id])
-  
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  @@unique([id_grupo, id_materia])
-}
 
 model Grupo {
   id Int @id @default(autoincrement())
   name String
-
-  materias Grupo_Materia[]
+  materia Materia @relation(fields: [id_materia], references: [id])
+  id_materia Int
   horario Grupo_Horario[]
   usuarios Usuario_Grupo[]
   licencia_detalles Licencia_Detalle[]

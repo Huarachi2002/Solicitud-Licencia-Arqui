@@ -199,13 +199,11 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Materias</label>
-            <select id="form-materias"
-                    multiple
-                    class="w-full bg-white text-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 h-28 hidden-scrollbar">
-              <option disabled>Cargando materias...</option>
+            <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Materia</label>
+            <select id="form-materia"
+                    class="w-full bg-white text-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 h-12">
+              <option disabled selected>Cargando materias...</option>
             </select>
-            <p class="text-white/50 text-[10px] mt-1 italic">Mantén Ctrl para seleccionar varias</p>
           </div>
           <div>
             <label class="block text-white/80 text-xs uppercase tracking-widest mb-2">Horarios</label>
@@ -271,20 +269,20 @@
         if (!res.ok) throw new Error('Error al obtener grupos');
         return await res.json();
       },
-      async create(name, materias = [], horarios = []) {
+      async create(name, materia , horarios = []) {
         const res = await fetch(`${API_BASE}/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, materias, horarios })
+          body: JSON.stringify({ name, materia, horarios })
         });
         if (!res.ok) throw new Error('Error al crear grupo');
         return await res.json();
       },
-      async update(id, name, materias = [], horarios = []) {
+      async update(id, name, materia, horarios = []) {
         const res = await fetch(`${API_BASE}/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, materias, horarios })
+          body: JSON.stringify({ name, materia, horarios })
         });
         if (!res.ok) throw new Error('Error al actualizar grupo');
         return await res.json();
@@ -332,7 +330,7 @@
         materiasList = resMaterias.status === 'fulfilled' ? resMaterias.value : [];
         horariosList = resHorarios.status === 'fulfilled' ? resHorarios.value : [];
 
-        populateSelect('form-materias', materiasList, 'id', 'name');
+        populateSelect('form-materia', materiasList, 'id', 'name');
         populateSelect('form-horarios', horariosList, 'id', 'name');
         renderTable(grupos);
       } catch (e) {
@@ -347,10 +345,16 @@
       const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
       select.innerHTML = '';
       if (!data || data.length === 0) {
-        select.innerHTML = '<option disabled>No hay datos disponibles</option>';
+        select.innerHTML = '<option disabled selected>No hay datos disponibles</option>';
         return;
       }
-      if (selectId === 'form-materias') {
+      if (selectId === 'form-materia') {
+        const defaultOpt = document.createElement('option');
+        defaultOpt.disabled = true;
+        defaultOpt.selected = true;
+        defaultOpt.textContent = 'Seleccione una materia';
+        select.appendChild(defaultOpt);
+        
         data.forEach(item => {
           const option = document.createElement('option');
           option.value = item[valueKey];
@@ -395,10 +399,8 @@
         const tr = document.createElement('tr');
         tr.className = 'table-row border-b border-white/10';
         
-        const materiasStr = grupo.materias && grupo.materias.length 
-          ? '<div class="flex flex-wrap">' + grupo.materias.map(m => 
-              `<span class="custom-badge" style="background:rgba(14,165,233,0.25);color:#7dd3fc;">${escapeHTML(m.materia.name)}</span>`
-            ).join('') + '</div>'
+        const materiasStr = grupo.materia
+          ? `<div class="flex flex-wrap"><span class="custom-badge" style="background:rgba(14,165,233,0.25);color:#7dd3fc;">${escapeHTML(grupo.materia.name)}</span></div>`
           : '<span class="text-white/40 italic">Ninguna</span>';
 
         let horariosStr = '<span class="text-white/40 italic">No asignado</span>';
@@ -453,7 +455,7 @@
       document.getElementById('form-id').value = '';
       document.getElementById('form-name').value = '';
       
-      document.getElementById('form-materias').selectedIndex = -1;
+      document.getElementById('form-materia').selectedIndex = 0;
       document.getElementById('form-horarios').selectedIndex = -1;
 
       document.getElementById('modal-grupo').classList.remove('hidden');
@@ -468,10 +470,11 @@
       document.getElementById('form-id').value = grupo.id;
       document.getElementById('form-name').value = grupo.name;
 
-      const materiasIds = grupo.materias ? grupo.materias.map(m => m.id_materia) : [];
-      Array.from(document.getElementById('form-materias').options).forEach(opt => {
-        opt.selected = materiasIds.includes(Number(opt.value));
-      });
+      if (grupo.materia) {
+        document.getElementById('form-materia').value = String(grupo.id_materia);
+      } else {
+        document.getElementById('form-materia').selectedIndex = 0;
+      }
 
       const horariosIds = grupo.horario ? grupo.horario.map(h => h.id_horario) : [];
       Array.from(document.getElementById('form-horarios').options).forEach(opt => {
@@ -491,9 +494,13 @@
       const name = document.getElementById('form-name').value.trim().toUpperCase();
       if (!name) return;
 
-      const materiasSelect = document.getElementById('form-materias');
+      const materiaSelect = document.getElementById('form-materia');
       const horariosSelect = document.getElementById('form-horarios');
-      const selectedMaterias = Array.from(materiasSelect.selectedOptions).map(opt => Number(opt.value));
+      const selectedMateria = Number(materiaSelect.value);
+      if (isNaN(selectedMateria) || selectedMateria === 0) {
+        showToast('Debe seleccionar una materia', 'error');
+        return;
+      }
       const selectedHorarios = Array.from(horariosSelect.selectedOptions).map(opt => Number(opt.value));
 
       const btn = document.getElementById('btn-save');
@@ -502,10 +509,10 @@
 
       try {
         if (id) {
-          await PGrupo.update(Number(id), name, selectedMaterias, selectedHorarios);
+          await PGrupo.update(Number(id), name, selectedMateria, selectedHorarios);
           showToast('Grupo actualizado correctamente');
         } else {
-          await PGrupo.create(name, selectedMaterias, selectedHorarios);
+          await PGrupo.create(name, selectedMateria, selectedHorarios);
           showToast('Grupo creado correctamente');
         }
         closeModal();

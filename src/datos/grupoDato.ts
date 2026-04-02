@@ -4,9 +4,7 @@ class DGrupo {
     async getAll() {
         return await prisma.grupo.findMany({
             include: {
-                materias: {
-                    include: { materia: true }
-                },
+                materia: true,
                 horario: {
                     include: { horario: true }
                 }
@@ -14,47 +12,44 @@ class DGrupo {
         });
     }
 
-    async create(data: { name: string, ids_materia: number[], ids_horario: number[] }) {
-        const { name, ids_materia, ids_horario } = data;
+    async create(data: { name: string, id_materia: number, ids_horario: number[] }) {
+        const { name, id_materia, ids_horario } = data;
         return await prisma.grupo.create({
             data: {
-                name: name,
-                materias: {
-                    create: ids_materia.map((id_materia: number) => ({
-                        id_materia: id_materia
-                    }))
-                },
+                name,
+                id_materia,             // FK directo en tabla Grupo
                 horario: {
                     create: ids_horario.map((id_horario: number) => ({
-                        id_horario: id_horario
+                        id_horario
                     }))
                 }
             }
         });
     }
 
-    async update(id: number, data: Partial<{ name: string, ids_materia: number[], ids_horario: number[] }>) {
-        const { name, ids_materia, ids_horario } = data;
+    async update(id: number, data: Partial<{ name: string, id_materia: number, ids_horario: number[] }>) {
+        const { name, id_materia, ids_horario } = data;
         return await prisma.grupo.update({
             where: { id },
             data: {
-                name: name,
-                materias: ids_materia ? {
-                    deleteMany: {},
-                    create: ids_materia.map((id_materia: number) => ({
-                        id_materia: id_materia
-                    }))
-                } : undefined,
-                horario: ids_horario ? {
-                    deleteMany: {},
-                    create: ids_horario.map((id_horario: number) => ({
-                        id_horario: id_horario
-                    }))
-                } : undefined
+                ...(name !== undefined && { name }),
+                ...(id_materia !== undefined && { id_materia }),
+                ...(ids_horario !== undefined && {
+                    horario: {
+                        deleteMany: {},
+                        create: ids_horario.map((id_horario: number) => ({
+                            id_horario
+                        }))
+                    }
+                })
             }
         });
     }
+
     async delete(id: number) {
+        await prisma.grupo_Horario.deleteMany({
+            where: { id_grupo: id }
+        });
         return await prisma.grupo.delete({
             where: { id }
         });
@@ -62,11 +57,11 @@ class DGrupo {
 
     async getGrupoByMateria(id_materia: number) {
         return await prisma.grupo.findMany({
-            where: {
-                materias: {
-                    some: {
-                        id_materia: id_materia
-                    }
+            where: { id_materia },
+            include: {
+                materia: true,
+                horario: {
+                    include: { horario: true }
                 }
             }
         });

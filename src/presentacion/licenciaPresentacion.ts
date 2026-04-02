@@ -25,10 +25,28 @@ class PLicencia {
         }
     }
 
+    getByStudentId = async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            console.log("ID de estudiante: ", id);
+            const licencia = await NLicencia.getByStudentId(Number(id));
+            console.log("Licencia obtenida: ", licencia);
+            return res.status(200).json(licencia);
+        } catch (error: any) {
+            console.log("Error al obtener licencia: ", error.message);
+            return res.status(500).json(error.message);
+        }
+    }
+
     solicitarLicenciaEstudiante = async (req: Request, res: Response) => {
         try {
-            const { id_usuario_solicitante, id_grupo, start_date, end_date, reason, url_attached_1 } = req.body;
-            await NLicencia.solicitarLicenciaEstudiante({ id_usuario_solicitante, id_grupo, start_date, end_date, reason, url_attached_1 });
+            const { id_usuario_solicitante, ids_grupo, start_date, end_date, reason, url_attached_1 } = req.body;
+
+            if (!Array.isArray(ids_grupo) || ids_grupo.length === 0) {
+                return res.status(400).json({ message: 'Debe seleccionar al menos un grupo' });
+            }
+
+            await NLicencia.solicitarLicenciaEstudiante({ id_usuario_solicitante, ids_grupo, start_date, end_date, reason, url_attached_1 });
             return res.status(201).json({ message: "Licencia creada correctamente" });
         } catch (error: any) {
             console.log("Error al solicitar licencia: ", error.message);

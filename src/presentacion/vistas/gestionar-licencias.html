@@ -237,7 +237,7 @@
         <p class="text-white/80 text-xs uppercase tracking-widest font-semibold mb-3">Materias Afectadas</p>
 
         <!-- Cabecera -->
-        <div class="materia-row mb-2 px-1">
+        <div class="materia-row-header mb-2 px-1" style="display:grid;grid-template-columns:1fr 120px 28px 28px;gap:8px;align-items:center;">
           <span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Materia</span>
           <span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Grupo</span>
           <span></span>
@@ -318,6 +318,7 @@
         <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Inicio:</span><span id="det-start"></span></div>
         <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Fin:</span><span id="det-end"></span></div>
         <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Motivo:</span><span id="det-reason" class="flex-1"></span></div>
+        <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Materias:</span><span id="det-materias" class="flex-1"></span></div>
         <div class="flex gap-2"><span class="font-semibold text-white/50 w-28">Documento 1:</span><span id="det-doc1" class="break-all flex-1 text-sky-300 text-xs"></span></div>
         <div class="flex gap-2 hidden" id="det-doc2-row"><span class="font-semibold text-white/50 w-28">Documento 2:</span><span id="det-doc2" class="break-all flex-1 text-sky-300 text-xs"></span></div>
         <div class="flex gap-2 hidden" id="det-doc3-row"><span class="font-semibold text-white/50 w-28">Documento 3:</span><span id="det-doc3" class="break-all flex-1 text-sky-300 text-xs"></span></div>
@@ -372,10 +373,12 @@
       showLoading(true);
       try {
         const [resLic, resMat] = await Promise.allSettled([
-          fetch(API_LICENCIA).then(r => r.ok ? r.json() : Promise.reject()),
+          // Obtener dependiendo que rol es el que esta logueado
+          session.rol === 'ESTUDIANTE' ? fetch(API_LICENCIA + '/estudiante/' + session.id).then(r => r.ok ? r.json() : Promise.reject()) : fetch(API_LICENCIA).then(r => r.ok ? r.json() : Promise.reject()),
           fetch(API_MATERIA ).then(r => r.ok ? r.json() : Promise.reject()),
         ]);
         licencias    = resLic.status === 'fulfilled' ? resLic.value : [];
+        console.log("Licencia obtenidas: ", licencias);
         materiasList = resMat.status === 'fulfilled' ? resMat.value : [];
         renderTable(filterByTab(licencias));
       } catch {
@@ -472,6 +475,7 @@
       const div = document.createElement('div');
       div.id = `mat-row-${id}`;
       div.className = 'materia-row';
+      div.dataset.rowId = id;
       div.innerHTML = `
         <select id="sel-mat-${id}" class="form-input" onchange="onMateriaChange(${id})">
           <option value="">— Materia —</option>
@@ -583,22 +587,27 @@
 
       if (!fileDoc1) { showToast('El documento 1 es obligatorio', 'error'); return; }
 
-      // Recopilar grupos
       const grupoIds = [];
       document.querySelectorAll('.materia-row').forEach(row => {
-        const gruSel = row.querySelector('select:nth-child(2)');
+        const rowId  = row.dataset.rowId;
+        const gruSel = document.getElementById(`sel-gru-${rowId}`);
         if (gruSel && gruSel.value) grupoIds.push(Number(gruSel.value));
       });
 
+      if (grupoIds.length === 0) {
+        showToast('Debe seleccionar al menos un grupo', 'error');
+        return;
+      }
+
       const body = {
         id_usuario_solicitante: session?.id ?? 1,
+        ids_grupo: grupoIds,
         start_date:    new Date(startDate).toISOString(),
         end_date:      new Date(endDate).toISOString(),
         reason,
         url_attached_1: fileDoc1.name,      // ruta/nombre del archivo
         ...(fileDoc2 && { url_attached_2: fileDoc2.name }),
-        ...(fileDoc3 && { url_attached_3: fileDoc3.name }),
-        grupos: grupoIds
+        ...(fileDoc3 && { url_attached_3: fileDoc3.name })
       };
 
       const btn = document.getElementById('btn-save');
@@ -629,6 +638,7 @@
       document.getElementById('det-start').textContent  = lic.start_date ? new Date(lic.start_date).toLocaleDateString('es-BO') : '—';
       document.getElementById('det-end').textContent    = lic.end_date   ? new Date(lic.end_date).toLocaleDateString('es-BO')   : '—';
       document.getElementById('det-reason').textContent = lic.reason ?? '—';
+      document.getElementById('det-materias').textContent = lic.licencia_detalles.map(ld => ld.grupo.materia.name).join(', ');
 
       const estadoCls = ESTADO_CLASS[lic.state] ?? 'badge-pendiente';
       const estadoTxt = ESTADO[lic.state]       ?? 'Pendiente';

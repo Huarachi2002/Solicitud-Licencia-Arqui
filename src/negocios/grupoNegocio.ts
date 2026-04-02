@@ -4,10 +4,10 @@ class NGrupo {
     async getAll() {
         return await DGrupo.getAll();
     }
-    async create(data: { name: string, ids_materia: number[], ids_horario: number[] }) {
+    async create(data: { name: string, id_materia: number, ids_horario: number[] }) {
         return await DGrupo.create(data);
     }
-    async update(id: number, data: Partial<{ name: string, ids_materia: number[], ids_horario: number[] }>) {
+    async update(id: number, data: Partial<{ name: string, id_materia: number, ids_horario: number[] }>) {
         return await DGrupo.update(id, data);
     }
     async delete(id: number) {

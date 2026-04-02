@@ -4,9 +4,6 @@ class LicenciaNegocio {
     async getAll(start_date: Date = new Date(), end_date: Date = new Date(new Date().setMonth(new Date().getMonth() + 1))) {
         return await licenciaDato.getAll(start_date, end_date);
     }
-    async getById(id: number) {
-        return await licenciaDato.getById(id);
-    }
     async getByStudentId(id: number, start_date: Date = new Date(), end_date: Date = new Date(new Date().setMonth(new Date().getMonth() + 1))) {
         return await licenciaDato.getByStudentId(id, start_date, end_date);
     }
@@ -16,7 +13,7 @@ class LicenciaNegocio {
     async getByAllByState(state: number, start_date: Date = new Date(), end_date: Date = new Date(new Date().setMonth(new Date().getMonth() + 1))) {
         return await licenciaDato.getByAllByState(state, start_date, end_date);
     }
-    async solicitarLicenciaEstudiante(data: { id_usuario_solicitante: number, id_grupo: number, start_date: Date, end_date: Date, reason: string, url_attached_1: string }) {
+    async solicitarLicenciaEstudiante(data: { id_usuario_solicitante: number, ids_grupo: number[], start_date: Date, end_date: Date, reason: string, url_attached_1: string }) {
         return await licenciaDato.solicitarLicenciaEstudiante(data);
     }
     async aprobarLicencia(id_licencia: number, id_usuario_aprobador: number) {

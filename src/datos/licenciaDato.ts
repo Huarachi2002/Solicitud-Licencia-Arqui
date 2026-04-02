@@ -30,11 +30,22 @@ class LicenciaDato {
         return await prisma.licencia.findMany({
             where: {
                 id_usuario_solicitante: id,
-                start_date: {
-                    gte: start_date
-                },
-                end_date: {
-                    lte: end_date
+                // start_date: {
+                //     gte: start_date
+                // },
+                // end_date: {
+                //     lte: end_date
+                // }
+            },
+            include: {
+                licencia_detalles: {
+                    include: {
+                        grupo: {
+                            include: {
+                                materia: true
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -70,16 +81,17 @@ class LicenciaDato {
     }
 
 
-    async solicitarLicenciaEstudiante(data: { id_usuario_solicitante: number, id_grupo: number, start_date: Date, end_date: Date, reason: string, url_attached_1: string }) {
+    async solicitarLicenciaEstudiante(data: { id_usuario_solicitante: number, ids_grupo: number[], start_date: Date, end_date: Date, reason: string, url_attached_1: string }) {
+        const { ids_grupo, ...rest } = data;
+        const grupoIds: number[] = Array.isArray(ids_grupo) ? ids_grupo : [];
         return await prisma.licencia.create({
             data: {
-                ...data,
+                ...rest,
                 state: LicenciaEstado.PENDIENTE,
                 licencia_detalles: {
-                    create: {
-                        id_grupo: data.id_grupo,
-
-                    }
+                    create: grupoIds.map((id_grupo: number) => ({
+                        id_grupo: id_grupo
+                    }))
                 }
             }
         });
