@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Solicitud de Licencias | Sistema Académico</title>
-  <meta name="description" content="Módulo de solicitud de licencias para docentes y estudiantes del sistema académico UAGRM." />
+  <title>Gestionar Licencias | Sistema Académico</title>
+  <meta name="description" content="Módulo de gestión de licencias del sistema académico UAGRM. Permite a docentes y administradores aprobar o rechazar solicitudes." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
@@ -49,6 +49,50 @@
 
     .table-row { transition: background-color 0.15s ease; }
     .table-row:hover { background-color: rgba(59,130,246,0.08); }
+
+    /* Botones de acción en tabla */
+    .btn-aprobar {
+      background: rgba(16,185,129,0.2);
+      color: #6ee7b7;
+      border: 1px solid rgba(16,185,129,0.4);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-aprobar:hover:not(:disabled) {
+      background: rgba(16,185,129,0.4);
+      transform: scale(1.04);
+    }
+    .btn-rechazar {
+      background: rgba(239,68,68,0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.4);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-rechazar:hover:not(:disabled) {
+      background: rgba(239,68,68,0.4);
+      transform: scale(1.04);
+    }
+    .btn-aprobar:disabled, .btn-rechazar:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+    /* .col-admin: clase marcadora para columnas exclusivas de admin/docente */
 
     /* Icono ✓/✗ circular */
     .estado-icon {
@@ -143,7 +187,7 @@
   <main class="flex-1 flex flex-col min-h-screen">
 
     <div class="bg-[#1565a8] px-8 py-5 flex items-center justify-between">
-      <h1 class="text-white text-2xl font-extrabold uppercase tracking-widest">Solicitud de Licencias</h1>
+      <h1 id="page-title" class="text-white text-2xl font-extrabold uppercase tracking-widest">Gestionar Licencias</h1>
       <button id="btn-nueva-solicitud"
               class="btn-action bg-white text-[#1565a8] font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg shadow hover:bg-blue-50"
               onclick="openCreateModal()">
@@ -179,12 +223,14 @@
           <thead>
             <tr class="bg-white/20 text-white uppercase text-xs tracking-wider">
               <th class="text-left px-6 py-3 font-semibold">ID</th>
+              <th id="th-solicitante" class="col-admin text-left px-6 py-3 font-semibold hidden">Solicitante</th>
               <th class="text-left px-6 py-3 font-semibold">Fecha Inicio</th>
               <th class="text-left px-6 py-3 font-semibold">Fecha Fin</th>
               <th class="text-left px-6 py-3 font-semibold">Motivo</th>
               <th class="text-left px-6 py-3 font-semibold">Grupos</th>
               <th class="text-center px-6 py-3 font-semibold">Estado</th>
               <th class="text-center px-6 py-3 font-semibold">Docs</th>
+              <th id="th-acciones" class="col-admin text-center px-6 py-3 font-semibold hidden">Acciones</th>
             </tr>
           </thead>
           <tbody id="licencias-tbody"></tbody>
@@ -344,6 +390,7 @@
     let currentTab   = 'todas';
     let rowCount     = 0;
     let session      = null;
+    let isAdmin      = false; // true si rol es DOCENTE o ADMINISTRADOR
 
     const ESTADO       = { 0: 'Pendiente', 1: 'Aprobada', 2: 'Rechazada' };
     const ESTADO_CLASS = { 0: 'badge-pendiente', 1: 'badge-aprobada', 2: 'badge-rechazada' };
@@ -356,9 +403,33 @@
         session = JSON.parse(raw);
         document.getElementById('sidebar-username').textContent = session.name_full || 'Usuario';
         document.getElementById('sidebar-role').textContent     = session.rol       || '';
+
+        // Determinar si es rol con permisos de gestión
+        isAdmin = session.rol === 'DOCENTE' || session.rol === 'ADMINISTRADOR';
+
+        // Adaptar UI según rol
+        applyRoleUI();
       } catch {
         localStorage.removeItem('session');
         window.location.href = '/login';
+      }
+    }
+
+    function applyRoleUI() {
+      if (isAdmin) {
+        // Título y encabezado
+        document.getElementById('page-title').textContent = 'Gestionar Licencias';
+        // Ocultar botón nueva solicitud (solo estudiantes crean solicitudes)
+        document.getElementById('btn-nueva-solicitud').classList.add('hidden');
+        // Mostrar columnas exclusivas de admin
+        document.getElementById('th-solicitante').classList.remove('hidden');
+        document.getElementById('th-acciones').classList.remove('hidden');
+      } else {
+        // ESTUDIANTE
+        document.getElementById('page-title').textContent = 'Mis Solicitudes de Licencia';
+        document.getElementById('btn-nueva-solicitud').classList.remove('hidden');
+        document.getElementById('th-solicitante').classList.add('hidden');
+        document.getElementById('th-acciones').classList.add('hidden');
       }
     }
 
@@ -412,13 +483,16 @@
 
       data.forEach(lic => {
         const tr = document.createElement('tr');
-        tr.className = 'table-row border-b border-white/10 cursor-pointer';
-        tr.onclick = () => openDetalleModal(lic);
+        tr.className = 'table-row border-b border-white/10';
+        // Solo abrir detalle al hacer click fuera de botones de acción
+        tr.onclick = (e) => { if (!e.target.closest('.btn-aprobar,.btn-rechazar')) openDetalleModal(lic); };
+        tr.style.cursor = 'pointer';
 
         const startStr  = lic.start_date ? new Date(lic.start_date).toLocaleDateString('es-BO') : '—';
         const endStr    = lic.end_date   ? new Date(lic.end_date).toLocaleDateString('es-BO')   : '—';
         const estadoCls = ESTADO_CLASS[lic.state] ?? 'badge-pendiente';
         const estadoTxt = ESTADO[lic.state]       ?? 'Pendiente';
+        const isPending = lic.state === 0;
 
         const gruposStr = lic.licencia_detalles && lic.licencia_detalles.length
           ? lic.licencia_detalles.map(d =>
@@ -428,8 +502,30 @@
 
         const docsCount = [lic.url_attached_1, lic.url_attached_2, lic.url_attached_3].filter(Boolean).length;
 
+        // Columna solicitante (solo admin/docente)
+        const solicitanteCol = isAdmin
+          ? `<td class="col-admin px-6 py-3.5 text-white/80 text-xs font-medium">${escapeHTML(lic.usuario_solicitante?.name_full ?? '—')}</td>`
+          : '';
+
+        // Columna acciones (solo admin/docente)
+        const accionesCol = isAdmin
+          ? `<td class="col-admin px-4 py-3 text-center">
+               <div class="flex items-center justify-center gap-1.5">
+                 <button class="btn-aprobar" ${isPending ? '' : 'disabled'}
+                         onclick="approveL(event, ${lic.id})">
+                   ✓ Aprobar
+                 </button>
+                 <button class="btn-rechazar" ${isPending ? '' : 'disabled'}
+                         onclick="rejectL(event, ${lic.id})">
+                   ✗ Rechazar
+                 </button>
+               </div>
+             </td>`
+          : '';
+
         tr.innerHTML = `
           <td class="px-6 py-3.5 text-white/60 text-xs font-mono">#${lic.id}</td>
+          ${solicitanteCol}
           <td class="px-6 py-3.5 text-white/90 text-xs">${startStr}</td>
           <td class="px-6 py-3.5 text-white/90 text-xs">${endStr}</td>
           <td class="px-6 py-3.5 text-white/80 text-xs max-w-[160px] truncate">${escapeHTML(lic.reason ?? '')}</td>
@@ -444,6 +540,7 @@
               </svg>${docsCount}
             </span>
           </td>
+          ${accionesCol}
         `;
         tbody.appendChild(tr);
       });
@@ -666,6 +763,41 @@
 
     function closeDetalleModal() {
       document.getElementById('modal-detalle').classList.add('hidden');
+    }
+
+    /* ════ APROBAR / RECHAZAR ════ */
+    async function approveL(e, id) {
+      e.stopPropagation();
+      if (!confirm('¿Confirmar la APROBACIÓN de la solicitud #' + id + '?')) return;
+      try {
+        const res = await fetch(`${API_LICENCIA}/${id}/aprobar`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_usuario_aprobador: session?.id ?? 0 })
+        });
+        if (!res.ok) { const err = await res.json(); throw new Error(err?.message || 'Error al aprobar'); }
+        showToast('✓ Licencia #' + id + ' aprobada correctamente');
+        await loadInitialData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function rejectL(e, id) {
+      e.stopPropagation();
+      if (!confirm('¿Confirmar el RECHAZO de la solicitud #' + id + '?')) return;
+      try {
+        const res = await fetch(`${API_LICENCIA}/${id}/rechazar`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_usuario_rechazo: session?.id ?? 0 })
+        });
+        if (!res.ok) { const err = await res.json(); throw new Error(err?.message || 'Error al rechazar'); }
+        showToast('Licencia #' + id + ' rechazada', 'error');
+        await loadInitialData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
     }
 
     /* ════ SIDEBAR NAV ════ */

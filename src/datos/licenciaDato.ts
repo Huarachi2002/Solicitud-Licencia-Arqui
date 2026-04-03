@@ -10,14 +10,21 @@ class LicenciaDato {
 
     async getAll(start_date: Date = new Date(), end_date: Date = new Date(new Date().setMonth(new Date().getMonth() + 1))) {
         return await prisma.licencia.findMany({
-            where: {
-                start_date: {
-                    gte: start_date
+            include: {
+                usuario_solicitante: {
+                    select: { id: true, name_full: true }
                 },
-                end_date: {
-                    lte: end_date
+                licencia_detalles: {
+                    include: {
+                        grupo: {
+                            include: {
+                                materia: true
+                            }
+                        }
+                    }
                 }
-            }
+            },
+            orderBy: { id: 'desc' }
         });
     }
 
@@ -26,6 +33,7 @@ class LicenciaDato {
             where: { id }
         });
     }
+
     async getByStudentId(id: number, start_date: Date = new Date(), end_date: Date = new Date(new Date().setMonth(new Date().getMonth() + 1))) {
         return await prisma.licencia.findMany({
             where: {
@@ -112,7 +120,7 @@ class LicenciaDato {
             where: { id },
             data: {
                 state,
-                id_usuario_solicitante: id_usuario_rechazo
+                id_usuario_aprobador: id_usuario_rechazo
             }
         });
     }

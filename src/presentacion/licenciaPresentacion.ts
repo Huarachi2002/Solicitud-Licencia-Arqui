@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import NLicencia from "../negocios/licenciaNegocio";
 import NMateria from "../negocios/materiaNegocio";
 import NGrupo from "../negocios/grupoNegocio";
-import NHorario from "../negocios/horarioNegocio";
 
 class PLicencia {
     private materias: string[];
