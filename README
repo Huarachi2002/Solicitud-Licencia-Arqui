@@ -1,0 +1,5 @@
+npm run dev
+npm run seed
+npx prisma generate
+npx prisma db push
+npx prisma db seed

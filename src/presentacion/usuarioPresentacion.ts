@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import NUsuario from '../negocios/usuarioNegocio';
 import NRol from '../negocios/rolNegocio';
+import NGrupo from '../negocios/grupoNegocio';
+import NMateria from '../negocios/materiaNegocio';
 
 class PUsuario {
 
@@ -9,6 +11,8 @@ class PUsuario {
     private cellphone: string;
     private num_register: string;
     private password: string;
+    private grupos: string[];
+    private materias: string[];
 
     constructor() {
         this.name_full = '';
@@ -16,6 +20,8 @@ class PUsuario {
         this.cellphone = '';
         this.num_register = '';
         this.password = '';
+        this.grupos = [];
+        this.materias = [];
     }
 
     messagePop = (req: Request, res: Response) => {
@@ -28,12 +34,12 @@ class PUsuario {
 
     registerStudent = async (req: Request, res: Response) => {
         try {
-            const { name_full, mail, cellphone, num_register, password } = req.body;
+            const { name_full, mail, cellphone, num_register, password, ids_grupo } = req.body;
             const id_rol = await this.getByName('ESTUDIANTE');
             if (!id_rol) {
                 return res.status(404).json({ success: false, message: 'Rol no encontrado' });
             }
-            await NUsuario.registerStudent({ id_rol, name_full, mail, cellphone, num_register, password });
+            await NUsuario.registerStudent({ id_rol, name_full, mail, cellphone, num_register, password, ids_grupo });
             res.status(201).json({ success: true, message: 'Usuario registrado exitosamente' });
         } catch (error: any) {
             console.log("Error al registrar usuario: ", error.message);
@@ -43,12 +49,12 @@ class PUsuario {
 
     registerTeacher = async (req: Request, res: Response) => {
         try {
-            const { name_full, mail, cellphone, num_register, password } = req.body;
+            const { name_full, mail, cellphone, num_register, password, ids_grupo } = req.body;
             const id_rol = await this.getByName('DOCENTE');
             if (!id_rol) {
                 return res.status(404).json({ success: false, message: 'Rol no encontrado' });
             }
-            await NUsuario.registerTeacher({ id_rol, name_full, mail, cellphone, num_register, password });
+            await NUsuario.registerTeacher({ id_rol, name_full, mail, cellphone, num_register, password, ids_grupo });
             res.status(201).json({ success: true, message: 'Usuario registrado exitosamente' });
         } catch (error: any) {
             console.log("Error al registrar usuario: ", error.message);
@@ -86,6 +92,27 @@ class PUsuario {
             });
         } catch (error: any) {
             console.log("Error al loguear usuario: ", error.message);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    getAllGrupo = async (req: Request, res: Response) => {
+        try {
+            const result = await NGrupo.getAll();
+            res.status(200).json({ success: true, message: 'Grupo obtenido exitosamente', data: result });
+        } catch (error: any) {
+            console.log("Error al obtener grupo: ", error.message);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    getMateriaByGrupo = async (req: Request, res: Response) => {
+        try {
+            const { id_grupo } = req.params;
+            const result = await NMateria.getMateriaByGrupo(Number(id_grupo));
+            res.status(200).json({ success: true, message: 'Materia obtenida exitosamente', data: result });
+        } catch (error: any) {
+            console.log("Error al obtener materia: ", error.message);
             res.status(500).json({ success: false, message: error.message });
         }
     }

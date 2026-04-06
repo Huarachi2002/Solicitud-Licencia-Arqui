@@ -81,44 +81,43 @@
          style="background: linear-gradient(180deg, #7ec8e3 0%, #5bb5d5 100%);">
 
     <div class="px-5 pt-6 pb-4 border-b border-white/20">
-      <p class="font-bold text-slate-900 text-sm uppercase tracking-wide">USERNAME</p>
-      <p class="text-slate-700 text-xs mt-0.5">typeuser</p>
+      <p id="sidebar-username" class="font-bold text-slate-900 text-sm uppercase tracking-wide">—</p>
+      <p id="sidebar-role"     class="text-slate-700 text-xs mt-0.5">—</p>
     </div>
 
     <nav class="flex-1 py-4 space-y-0.5 px-2">
       <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
-           onclick="setActiveNav(this)">
-        Gestionar Roles
+           onclick="navigate('/home')">
+        Inicio
       </div>
       <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
-           onclick="setActiveNav(this)">
+           onclick="navigate('/licencias')">
         Solicitud de Licencias
       </div>
+      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
+           onclick="navigate('/roles')">
+        Gestionar Roles
+      </div>
       <div class="nav-item active rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
-           onclick="setActiveNav(this)">
+           onclick="navigate('/grupos')">
         Gestionar Grupos
       </div>
       <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
-           onclick="setActiveNav(this)">
+           onclick="navigate('/materias')">
         Gestión de Materias
       </div>
       <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
-           onclick="setActiveNav(this)">
+           onclick="navigate('/horarios')">
         Configuración Horarios
       </div>
-      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
-           onclick="setActiveNav(this)">
-        Gestionar Personal Docente
-      </div>
-      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
-           onclick="setActiveNav(this)">
-        Asignación Carga Académica
-      </div>
-      <div class="nav-item rounded px-3 py-2.5 text-xs font-bold text-slate-900 uppercase tracking-wide"
-           onclick="setActiveNav(this)">
-        Historial de Notificaciones
-      </div>
     </nav>
+
+    <div class="px-3 pb-5">
+      <button onclick="logout()"
+              class="w-full text-left px-3 py-2 text-xs font-bold text-red-700 uppercase tracking-wide rounded hover:bg-red-100/30 transition-colors">
+        ↩ Cerrar sesión
+      </button>
+    </div>
   </aside>
 
   <main class="flex-1 flex flex-col min-h-screen">
@@ -558,26 +557,20 @@
     function setActiveNav(el) {
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
       el.classList.add('active');
-      // Navigate based on text content
-      const text = el.textContent.trim().toLowerCase();
-      const routes = {
-        'inicio': '/home',
-        'gestionar roles': '/roles',
-        'solicitud de licencias': '/licencias',
-        'mis licencias': '/mis-licencias',
-        'historial': '/historial',
-        'gestionar grupos': '/grupos',
-        'gestión de materias': '/materias',
-        'configuración horarios': '/horarios',
-        'gestionar personal docente': '/teacher',
-        'asignación carga académica': '/carga-academica',
-        'historial de notificaciones': '/notificaciones'
-      };
-      if (routes[text]) {
-        window.location.href = routes[text];
-      }
-
     }
+    function navigate(route) { window.location.href = route; }
+    function logout() { localStorage.removeItem('session'); window.location.href = '/login'; }
+    function initSession() {
+      const raw = localStorage.getItem('session');
+      if (!raw) { window.location.href = '/login'; return; }
+      try {
+        const s = JSON.parse(raw);
+        if ((s.rol || '').toUpperCase() !== 'ADMINISTRADOR') { window.location.href = '/login'; return; }
+        document.getElementById('sidebar-username').textContent = s.name_full || 'Usuario';
+        document.getElementById('sidebar-role').textContent     = s.rol || '';
+      } catch { localStorage.removeItem('session'); window.location.href = '/login'; }
+    }
+    initSession();
 
     function showLoading(show) {
       document.getElementById('loading-state').classList.toggle('hidden', !show);

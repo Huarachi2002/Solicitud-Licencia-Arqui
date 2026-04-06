@@ -13,6 +13,10 @@ class NMateria {
     async delete(id: number) {
         return await DMateria.delete(id);
     }
+
+    async getMateriaByGrupo(id_grupo: number) {
+        return await DMateria.getMateriaByGrupo(id_grupo);
+    }
 }
 
 export default new NMateria();

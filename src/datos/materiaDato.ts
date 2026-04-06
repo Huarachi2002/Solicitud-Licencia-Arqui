@@ -1,23 +1,28 @@
-import prisma from '../config/db';
+import db from '../config/db';
 
 class DMateria {
     async getAll() {
-        return await prisma.materia.findMany();
+        return await db.materia.findMany();
     }
     async create(data: { name: string, initials: string }) {
-        return await prisma.materia.create({
+        return await db.materia.create({
             data
         });
     }
     async update(id: number, data: Partial<{ name: string, initials: string }>) {
-        return await prisma.materia.update({
+        return await db.materia.update({
             where: { id },
             data
         });
     }
     async delete(id: number) {
-        return await prisma.materia.delete({
+        return await db.materia.delete({
             where: { id }
+        });
+    }
+    async getMateriaByGrupo(id_grupo: number) {
+        return await db.materia.findMany({
+            where: { grupos: { some: { id: id_grupo } } }
         });
     }
 }

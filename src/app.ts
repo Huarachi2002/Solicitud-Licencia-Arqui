@@ -55,6 +55,10 @@ app.get('/login', (req, res) => {
     res.redirect('/login.html')
 })
 
+app.get('/', (req, res) => {
+    res.redirect('/login')
+})
+
 app.use('/api/licencia', licenciaRoutes);
 app.use('/api/usuario', usuarioRoutes);
 app.use('/api/grupo', grupoRoutes);

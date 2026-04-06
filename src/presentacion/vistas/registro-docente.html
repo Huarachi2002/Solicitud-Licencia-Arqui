@@ -46,6 +46,62 @@
     #strength-bar {
       transition: width 0.3s ease, background-color 0.3s ease;
     }
+
+    /* ── Grupo selector ── */
+    .grupo-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 9999px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      user-select: none;
+    }
+    .grupo-chip:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
+    .grupo-chip.selected {
+      background: rgba(255,255,255,0.9);
+      color: #1565a8;
+      border-color: white;
+      font-weight: 600;
+    }
+    .grupo-chip.selected .chip-check { display: inline; }
+    .grupo-chip .chip-check { display: none; }
+
+    /* Preview panel */
+    #grupo-preview {
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    #grupo-preview.hidden-fade {
+      opacity: 0;
+      transform: translateY(6px);
+      pointer-events: none;
+    }
+
+    .materia-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .grupos-container {
+      max-height: 160px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.3) transparent;
+    }
+    .grupos-container::-webkit-scrollbar { width: 4px; }
+    .grupos-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
   </style>
 </head>
 <body class="bg-white min-h-screen flex">
@@ -78,6 +134,7 @@
         <form id="form-docente" onsubmit="submitDocente(event)" novalidate
               class="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-8 space-y-5">
 
+          <!-- Nombre -->
           <div>
             <label for="input-name" class="block text-white/80 text-xs uppercase tracking-widest mb-2">
               Nombre Completo
@@ -90,6 +147,7 @@
                           focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-slate-400" />
           </div>
 
+          <!-- Nro. Registro + CI -->
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label for="input-num-register" class="block text-white/80 text-xs uppercase tracking-widest mb-2">
@@ -115,6 +173,7 @@
             </div>
           </div>
 
+          <!-- Correo -->
           <div>
             <label for="input-mail" class="block text-white/80 text-xs uppercase tracking-widest mb-2">
               Correo Electrónico
@@ -127,6 +186,7 @@
                           focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-slate-400" />
           </div>
 
+          <!-- Celular -->
           <div>
             <label for="input-cellphone" class="block text-white/80 text-xs uppercase tracking-widest mb-2">
               Celular
@@ -139,6 +199,50 @@
                           focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-slate-400" />
           </div>
 
+          <!-- ══ GRUPOS ══ -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-white/80 text-xs uppercase tracking-widest">
+                Grupos
+              </label>
+              <span id="grupos-count" class="text-white/50 text-xs">0 seleccionado(s)</span>
+            </div>
+
+            <!-- Loading state -->
+            <div id="grupos-loading" class="flex items-center gap-2 text-white/50 text-xs py-2">
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+              Cargando grupos...
+            </div>
+
+            <!-- Chips container -->
+            <div id="grupos-chips"
+                 class="grupos-container hidden flex flex-wrap gap-2 p-3 bg-white/5 rounded-xl border border-white/15 min-h-[60px]">
+            </div>
+
+            <!-- Error -->
+            <p id="grupos-error" class="hidden text-red-300 text-xs mt-1">
+              No se pudieron cargar los grupos.
+            </p>
+
+            <!-- Vista previa de materia -->
+            <div id="grupo-preview"
+                 class="hidden-fade hidden mt-3 p-3 bg-white/10 rounded-xl border border-white/20">
+              <p class="text-white/60 text-xs uppercase tracking-widest mb-2">Vista previa · Materia del grupo</p>
+              <div id="preview-loading" class="hidden flex items-center gap-2 text-white/50 text-xs">
+                <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                Consultando...
+              </div>
+              <div id="preview-content" class="flex flex-wrap gap-2"></div>
+            </div>
+          </div>
+
+          <!-- Contraseña -->
           <div>
             <label for="input-password" class="block text-white/80 text-xs uppercase tracking-widest mb-2">
               Contraseña
@@ -171,6 +275,7 @@
             <p id="strength-label" class="text-white/50 text-xs mt-1"></p>
           </div>
 
+          <!-- Confirmar Contraseña -->
           <div>
             <label for="input-confirm-password" class="block text-white/80 text-xs uppercase tracking-widest mb-2">
               Confirmar Contraseña
@@ -219,7 +324,7 @@
 
         <p class="text-center text-white/60 text-xs mt-4">
           ¿Ya tienes cuenta?
-          <a href="#" class="text-white font-semibold hover:underline">Inicia sesión</a>
+          <a href="/" class="text-white font-semibold hover:underline">Inicia sesión</a>
         </p>
 
       </div>
@@ -249,11 +354,152 @@
   </div>
 
   <script>
-    const API_BASE = '/api/usuario/teacher';
+    const API_BASE      = '/api/usuario/teacher';
+    const API_GRUPOS    = '/api/usuario/grupos';
+    const API_MATERIA   = (id) => `/api/usuario/grupos/${id}/materia`;
 
+    /* ── Estado de grupos seleccionados ── */
+    const selectedGrupos = new Set();   // Set<number>
+    let previewTimer = null;
 
+    /* ══════════════════════════════════════
+       CARGA DE GRUPOS AL INIT
+    ══════════════════════════════════════ */
+    async function loadGrupos() {
+      const loading = document.getElementById('grupos-loading');
+      const chips   = document.getElementById('grupos-chips');
+      const errEl   = document.getElementById('grupos-error');
+
+      try {
+        const res  = await fetch(API_GRUPOS);
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error();
+
+        const grupos = json.data; // array de grupos
+
+        loading.classList.add('hidden');
+
+        if (!grupos || grupos.length === 0) {
+          chips.classList.remove('hidden');
+          chips.innerHTML = '<span class="text-white/40 text-xs">No hay grupos disponibles.</span>';
+          return;
+        }
+
+        chips.innerHTML = '';
+        grupos.forEach(g => {
+          const chip = document.createElement('button');
+          chip.type        = 'button';
+          chip.dataset.id  = g.id;
+          chip.dataset.name = g.name;
+          chip.className   = 'grupo-chip';
+          chip.innerHTML   = `
+            <svg class="chip-check w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            ${g.name}
+          `;
+          chip.addEventListener('click', () => toggleGrupo(chip, g.id));
+          chips.appendChild(chip);
+        });
+
+        chips.classList.remove('hidden');
+
+      } catch {
+        loading.classList.add('hidden');
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    /* ── Toggle selección de grupo ── */
+    function toggleGrupo(chip, id) {
+      if (selectedGrupos.has(id)) {
+        selectedGrupos.delete(id);
+        chip.classList.remove('selected');
+      } else {
+        selectedGrupos.add(id);
+        chip.classList.add('selected');
+      }
+      updateCount();
+      schedulePreview(id);
+    }
+
+    function updateCount() {
+      document.getElementById('grupos-count').textContent =
+        `${selectedGrupos.size} seleccionado(s)`;
+    }
+
+    /* ── Vista previa de materia (último chip pulsado) ── */
+    function schedulePreview(id_grupo) {
+      clearTimeout(previewTimer);
+      // Si no hay ninguno seleccionado, ocultamos el panel
+      if (selectedGrupos.size === 0) {
+        hidePreview();
+        return;
+      }
+      // Mostramos vista previa del grupo recién tocado (si está seleccionado)
+      const targetId = selectedGrupos.has(id_grupo) ? id_grupo : [...selectedGrupos].at(-1);
+      previewTimer = setTimeout(() => showPreview(targetId), 150);
+    }
+
+    function hidePreview() {
+      const panel = document.getElementById('grupo-preview');
+      panel.classList.add('hidden-fade');
+      setTimeout(() => panel.classList.add('hidden'), 200);
+    }
+
+    async function showPreview(id_grupo) {
+      const panel    = document.getElementById('grupo-preview');
+      const loading  = document.getElementById('preview-loading');
+      const content  = document.getElementById('preview-content');
+
+      // Mostrar panel
+      panel.classList.remove('hidden');
+      requestAnimationFrame(() => panel.classList.remove('hidden-fade'));
+
+      loading.classList.remove('hidden');
+      content.innerHTML = '';
+
+      try {
+        const res  = await fetch(API_MATERIA(id_grupo));
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error();
+
+        const materias = Array.isArray(json.data) ? json.data : [json.data];
+
+        loading.classList.add('hidden');
+
+        if (!materias || materias.length === 0) {
+          content.innerHTML = '<span class="text-white/40 text-xs">Sin materia asignada.</span>';
+          return;
+        }
+
+        materias.forEach(m => {
+          const badge = document.createElement('div');
+          badge.className = 'materia-badge';
+          badge.innerHTML = `
+            <svg class="w-3 h-3 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13
+                       C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477
+                       14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247
+                       18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            <span><strong>${m.initials ?? ''}</strong> ${m.name}</span>
+          `;
+          content.appendChild(badge);
+        });
+
+      } catch {
+        loading.classList.add('hidden');
+        content.innerHTML = '<span class="text-red-300 text-xs">Error al cargar la materia.</span>';
+      }
+    }
+
+    /* ══════════════════════════════════════
+       LÓGICA DE REGISTRO (3 capas → API)
+    ══════════════════════════════════════ */
     const PUsuario = {
-      async registerTeacher({ name_full, mail, cellphone, num_register, password, confirmPassword }) {
+      async registerTeacher({ name_full, mail, cellphone, num_register, password, confirmPassword, ids_grupo }) {
         if (!name_full.trim())       throw new Error('El nombre completo es requerido.');
         if (!num_register.trim())    throw new Error('El nro. de registro es requerido.');
         if (!mail.trim())            throw new Error('El correo electrónico es requerido.');
@@ -272,11 +518,15 @@
             mail: mail.trim().toLowerCase(),
             cellphone: cellphone.trim(),
             num_register: num_register.trim(),
-            password
+            password,
+            ids_grupo
           })
         });
-        if (!res.ok) throw new Error('Error al registrar el usuario');
-        messagePop()
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.message || 'Error al registrar el usuario');
+        }
+        messagePop();
       }
     };
 
@@ -284,6 +534,10 @@
         document.getElementById('form-docente').reset();
         resetStrength();
         document.getElementById('match-label').textContent = '';
+        selectedGrupos.clear();
+        updateCount();
+        hidePreview();
+        document.querySelectorAll('.grupo-chip').forEach(c => c.classList.remove('selected'));
 
         const modal = document.getElementById('modal-success');
         modal.classList.remove('hidden');
@@ -306,6 +560,7 @@
         cellphone:       document.getElementById('input-cellphone').value,
         password:        document.getElementById('input-password').value,
         confirmPassword: document.getElementById('input-confirm-password').value,
+        ids_grupo:       [...selectedGrupos],
       };
 
       const btn = document.getElementById('btn-registrar');
@@ -326,7 +581,12 @@
       document.getElementById('form-docente').reset();
       resetStrength();
       document.getElementById('match-label').textContent = '';
+      selectedGrupos.clear();
+      updateCount();
+      hidePreview();
+      document.querySelectorAll('.grupo-chip').forEach(c => c.classList.remove('selected'));
     }
+
     function closeSuccessModal() {
       document.getElementById('modal-success').classList.add('hidden');
     }
@@ -405,34 +665,6 @@
       document.getElementById('strength-label').textContent = '';
     }
 
-    function setActiveNav(el) {
-      document.querySelectorAll('.nav-item').forEach(i => {
-        i.classList.remove('bg-white/20', 'border-white');
-        i.classList.add('border-transparent');
-      });
-      el.classList.add('bg-white/20', 'border-white');
-      el.classList.remove('border-transparent');
-      // Navigate based on text content
-      const text = el.textContent.trim().toLowerCase();
-      const routes = {
-        'inicio': '/home',
-        'gestionar roles': '/roles',
-        'solicitud de licencias': '/licencias',
-        'mis licencias': '/mis-licencias',
-        'historial': '/historial',
-        'gestionar grupos': '/grupos',
-        'gestión de materias': '/materias',
-        'configuración horarios': '/horarios',
-        'gestionar personal docente': '/teacher',
-        'asignación carga académica': '/carga-academica',
-        'historial de notificaciones': '/notificaciones'
-      };
-      if (routes[text]) {
-        window.location.href = routes[text];
-      }
-
-    }
-
     let toastTimer;
     function showToast(msg, type = 'success') {
       const t = document.getElementById('toast');
@@ -448,6 +680,9 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closeSuccessModal();
     });
+
+    /* ── Inicializar ── */
+    loadGrupos();
   </script>
 </body>
 </html>

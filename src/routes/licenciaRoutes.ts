@@ -3,6 +3,7 @@ import PLicencia from '../presentacion/licenciaPresentacion';
 const router = express.Router();
 
 router.get('/', PLicencia.getAll);
+router.get('/:id/contactar-docente', PLicencia.contactarDocente);
 router.get('/estudiante/:id', PLicencia.getByStudentId);
 router.post('/', PLicencia.solicitarLicenciaEstudiante);
 router.put('/:id/aprobar', PLicencia.aprobarLicencia);

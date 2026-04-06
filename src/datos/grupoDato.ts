@@ -1,8 +1,8 @@
-import prisma from '../config/db';
+import db from '../config/db';
 
 class DGrupo {
     async getAll() {
-        return await prisma.grupo.findMany({
+        return await db.grupo.findMany({
             include: {
                 materia: true,
                 horario: {
@@ -14,7 +14,7 @@ class DGrupo {
 
     async create(data: { name: string, id_materia: number, ids_horario: number[] }) {
         const { name, id_materia, ids_horario } = data;
-        return await prisma.grupo.create({
+        return await db.grupo.create({
             data: {
                 name,
                 id_materia,             // FK directo en tabla Grupo
@@ -29,7 +29,7 @@ class DGrupo {
 
     async update(id: number, data: Partial<{ name: string, id_materia: number, ids_horario: number[] }>) {
         const { name, id_materia, ids_horario } = data;
-        return await prisma.grupo.update({
+        return await db.grupo.update({
             where: { id },
             data: {
                 ...(name !== undefined && { name }),
@@ -47,16 +47,16 @@ class DGrupo {
     }
 
     async delete(id: number) {
-        await prisma.grupo_Horario.deleteMany({
+        await db.grupo_Horario.deleteMany({
             where: { id_grupo: id }
         });
-        return await prisma.grupo.delete({
+        return await db.grupo.delete({
             where: { id }
         });
     }
 
     async getGrupoByMateria(id_materia: number) {
-        return await prisma.grupo.findMany({
+        return await db.grupo.findMany({
             where: { id_materia },
             include: {
                 materia: true,

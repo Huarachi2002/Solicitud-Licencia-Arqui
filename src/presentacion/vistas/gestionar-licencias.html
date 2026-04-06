@@ -92,7 +92,24 @@
       cursor: not-allowed;
       transform: none;
     }
-    /* .col-admin: clase marcadora para columnas exclusivas de admin/docente */
+    .btn-contactar {
+      background: rgba(99,102,241,0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99,102,241,0.4);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-contactar:hover {
+      background: rgba(99,102,241,0.4);
+      transform: scale(1.04);
+    }
 
     /* Icono ✓/✗ circular */
     .estado-icon {
@@ -379,12 +396,39 @@
     </div>
   </div>
 
+  <!-- ══ MODAL CONTACTAR DOCENTES ══ -->
+  <div id="modal-contactar" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeContactarModal()"></div>
+    <div class="modal-box relative z-10 bg-[#1565a8] rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8 max-h-[90vh] overflow-y-auto">
+      <p class="text-white/60 text-xs uppercase tracking-widest mb-1">Solicitud #<span id="contactar-lic-id"></span></p>
+      <h2 class="text-white text-lg font-extrabold uppercase tracking-wide mb-2">Contactar Docentes</h2>
+      <p class="text-white/50 text-xs mb-5">Los siguientes docentes están asignados a los grupos de esta solicitud:</p>
+
+      <!-- Loading -->
+      <div id="contactar-loading" class="flex items-center gap-2 text-white/50 text-xs py-4">
+        <div class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+        Consultando docentes...
+      </div>
+
+      <!-- Lista de docentes -->
+      <div id="contactar-list" class="hidden space-y-3"></div>
+
+      <!-- Sin docentes -->
+      <p id="contactar-empty" class="hidden text-white/40 text-sm italic py-4">No se encontraron docentes asignados a estos grupos.</p>
+
+      <div class="flex justify-end mt-6">
+        <button onclick="closeContactarModal()"
+                class="btn-action bg-white/20 hover:bg-white/30 text-white font-bold text-sm uppercase tracking-wider px-6 py-2.5 rounded-xl border border-white/30">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    /* ════ CONSTANTES ════ */
     const API_LICENCIA = '/api/licencia';
     const API_MATERIA  = '/api/materia';
 
-    /* ════ ESTADO GLOBAL ════ */
     let licencias    = [];
     let materiasList = [];
     let currentTab   = 'todas';
@@ -438,7 +482,6 @@
       window.location.href = '/login';
     }
 
-    /* ════ CARGA INICIAL ════ */
     async function loadInitialData() {
       initSession();
       showLoading(true);
@@ -459,7 +502,6 @@
       }
     }
 
-    /* ════ TABLA ════ */
     function filterByTab(data) {
       if (currentTab === 'todas') return data;
       const map = { pendiente: 0, aprobada: 1, rechazada: 2 };
@@ -485,14 +527,16 @@
         const tr = document.createElement('tr');
         tr.className = 'table-row border-b border-white/10';
         // Solo abrir detalle al hacer click fuera de botones de acción
-        tr.onclick = (e) => { if (!e.target.closest('.btn-aprobar,.btn-rechazar')) openDetalleModal(lic); };
+        tr.onclick = (e) => { if (!e.target.closest('.btn-aprobar,.btn-rechazar,.btn-contactar')) openDetalleModal(lic); };
         tr.style.cursor = 'pointer';
 
         const startStr  = lic.start_date ? new Date(lic.start_date).toLocaleDateString('es-BO') : '—';
         const endStr    = lic.end_date   ? new Date(lic.end_date).toLocaleDateString('es-BO')   : '—';
         const estadoCls = ESTADO_CLASS[lic.state] ?? 'badge-pendiente';
         const estadoTxt = ESTADO[lic.state]       ?? 'Pendiente';
-        const isPending = lic.state === 0;
+        const isPending  = lic.state === 0;
+        const isApproved = lic.state === 1;
+        const isAdminRole = session?.rol === 'ADMINISTRADOR';
 
         const gruposStr = lic.licencia_detalles && lic.licencia_detalles.length
           ? lic.licencia_detalles.map(d =>
@@ -510,7 +554,7 @@
         // Columna acciones (solo admin/docente)
         const accionesCol = isAdmin
           ? `<td class="col-admin px-4 py-3 text-center">
-               <div class="flex items-center justify-center gap-1.5">
+               <div class="flex items-center justify-center gap-1.5 flex-wrap">
                  <button class="btn-aprobar" ${isPending ? '' : 'disabled'}
                          onclick="approveL(event, ${lic.id})">
                    ✓ Aprobar
@@ -519,6 +563,12 @@
                          onclick="rejectL(event, ${lic.id})">
                    ✗ Rechazar
                  </button>
+                 ${isAdminRole && isApproved
+                   ? `<button class="btn-contactar"
+                             onclick="contactarDocentes(event, ${lic.id})">
+                       📞 Docentes
+                     </button>`
+                   : ''}
                </div>
              </td>`
           : '';
@@ -559,7 +609,6 @@
       document.getElementById('modal-licencia').classList.add('hidden');
     }
 
-    /* ── Filas Materia → Grupo (sin horario) ── */
     function addMateriaRow() {
       rowCount++;
       const id = rowCount;
@@ -837,8 +886,69 @@
     }
 
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closeModal(); closeDetalleModal(); }
+      if (e.key === 'Escape') { closeModal(); closeDetalleModal(); closeContactarModal(); }
     });
+
+    /* ════ CONTACTAR DOCENTES ════ */
+    async function contactarDocentes(e, id_licencia) {
+      e.stopPropagation();
+
+      document.getElementById('contactar-lic-id').textContent = id_licencia;
+      document.getElementById('contactar-loading').classList.remove('hidden');
+      document.getElementById('contactar-list').classList.add('hidden');
+      document.getElementById('contactar-empty').classList.add('hidden');
+      document.getElementById('modal-contactar').classList.remove('hidden');
+
+      try {
+        const res  = await fetch(`${API_LICENCIA}/${id_licencia}/contactar-docente`);
+        const json = await res.json();
+
+        document.getElementById('contactar-loading').classList.add('hidden');
+
+        if (!res.ok || !json.success || !json.data.length) {
+          document.getElementById('contactar-empty').classList.remove('hidden');
+          return;
+        }
+
+        const list = document.getElementById('contactar-list');
+        list.innerHTML = '';
+
+        json.data.forEach(doc => {
+          const gruposStr = doc.grupos.map(g => `${escapeHTML(g.grupo_name)} — ${escapeHTML(g.materia_name)}`).join('<br>');
+          const card = document.createElement('div');
+          card.className = 'bg-white/10 border border-white/20 rounded-xl p-4';
+          card.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-white font-bold text-sm truncate">${escapeHTML(doc.name_full)}</p>
+                <p class="text-white/50 text-xs mt-0.5">📱 ${escapeHTML(doc.cellphone)}</p>
+                <p class="text-white/50 text-xs">✉ ${escapeHTML(doc.mail)}</p>
+                <div class="mt-2 text-white/40 text-[11px] leading-relaxed">${gruposStr}</div>
+              </div>
+              <a href="${doc.whatsapp_url}" target="_blank" rel="noopener"
+                 class="flex-shrink-0 flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs uppercase tracking-wide px-3 py-2 rounded-lg transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.116 1.535 5.845L.057 23.43a.75.75 0 00.916.978l5.82-1.527A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75A9.75 9.75 0 1121.75 12 9.761 9.761 0 0112 21.75z"/>
+                </svg>
+                WhatsApp
+              </a>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+
+        list.classList.remove('hidden');
+      } catch {
+        document.getElementById('contactar-loading').classList.add('hidden');
+        document.getElementById('contactar-empty').textContent = 'Error al cargar los docentes.';
+        document.getElementById('contactar-empty').classList.remove('hidden');
+      }
+    }
+
+    function closeContactarModal() {
+      document.getElementById('modal-contactar').classList.add('hidden');
+    }
 
     loadInitialData();
   </script>

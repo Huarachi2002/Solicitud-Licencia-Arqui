@@ -1,4 +1,4 @@
-import prisma from '../config/db';
+import db from '../config/db';
 
 export enum LicenciaEstado {
     PENDIENTE = 0,
@@ -9,7 +9,7 @@ export enum LicenciaEstado {
 class LicenciaDato {
 
     async getAll(start_date: Date = new Date(), end_date: Date = new Date(new Date().setMonth(new Date().getMonth() + 1))) {
-        return await prisma.licencia.findMany({
+        return await db.licencia.findMany({
             include: {
                 usuario_solicitante: {
                     select: { id: true, name_full: true }
@@ -29,13 +29,27 @@ class LicenciaDato {
     }
 
     async getById(id: number) {
-        return await prisma.licencia.findUnique({
-            where: { id }
+        return await db.licencia.findUnique({
+            where: { id },
+            include: {
+                usuario_solicitante: {
+                    select: { id: true, name_full: true, num_register: true }
+                },
+                licencia_detalles: {
+                    include: {
+                        grupo: {
+                            include: {
+                                materia: true
+                            }
+                        }
+                    }
+                }
+            }
         });
     }
 
     async getByStudentId(id: number, start_date: Date = new Date(), end_date: Date = new Date(new Date().setMonth(new Date().getMonth() + 1))) {
-        return await prisma.licencia.findMany({
+        return await db.licencia.findMany({
             where: {
                 id_usuario_solicitante: id,
                 // start_date: {
@@ -59,40 +73,10 @@ class LicenciaDato {
         });
     }
 
-    async getByStudentIdAndState(id: number, state: number, start_date: Date = new Date(), end_date: Date = new Date(new Date().setMonth(new Date().getMonth() + 1))) {
-        return await prisma.licencia.findMany({
-            where: {
-                id_usuario_solicitante: id,
-                state,
-                start_date: {
-                    gte: start_date
-                },
-                end_date: {
-                    lte: end_date
-                }
-            }
-        });
-    }
-
-    async getByAllByState(state: number, start_date: Date = new Date(), end_date: Date = new Date(new Date().setMonth(new Date().getMonth() + 1))) {
-        return await prisma.licencia.findMany({
-            where: {
-                state,
-                start_date: {
-                    gte: start_date
-                },
-                end_date: {
-                    lte: end_date
-                }
-            }
-        });
-    }
-
-
     async solicitarLicenciaEstudiante(data: { id_usuario_solicitante: number, ids_grupo: number[], start_date: Date, end_date: Date, reason: string, url_attached_1: string }) {
         const { ids_grupo, ...rest } = data;
         const grupoIds: number[] = Array.isArray(ids_grupo) ? ids_grupo : [];
-        return await prisma.licencia.create({
+        return await db.licencia.create({
             data: {
                 ...rest,
                 state: LicenciaEstado.PENDIENTE,
@@ -106,7 +90,7 @@ class LicenciaDato {
     }
 
     async aprobarLicencia(id: number, state: number, id_usuario_aprobador: number) {
-        return await prisma.licencia.update({
+        return await db.licencia.update({
             where: { id },
             data: {
                 state,
@@ -116,7 +100,7 @@ class LicenciaDato {
     }
 
     async rechazarLicencia(id: number, state: number, id_usuario_rechazo: number) {
-        return await prisma.licencia.update({
+        return await db.licencia.update({
             where: { id },
             data: {
                 state,
@@ -125,9 +109,58 @@ class LicenciaDato {
         });
     }
     async delete(id: number) {
-        return await prisma.licencia.delete({
+        return await db.licencia.delete({
             where: { id }
         });
+    }
+
+    async getDocentesByLicencia(id_licencia: number) {
+        // Obtener los grupos de la licencia, luego los docentes de cada grupo
+        const detalles = await db.licencia_Detalle.findMany({
+            where: { id_licencia },
+            include: {
+                grupo: {
+                    include: {
+                        materia: true,
+                        usuarios: {
+                            include: {
+                                usuario: {
+                                    include: { rol: true }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Extraer docentes únicos con info del grupo/materia
+        const docentesMap = new Map<number, { id: number; name_full: string; mail: string; cellphone: string; grupos: { id_grupo: number; grupo_name: string; materia_name: string }[] }>();
+
+        for (const detalle of detalles) {
+            const grupo = detalle.grupo;
+            for (const ug of grupo.usuarios) {
+                const usuario = ug.usuario;
+                if (usuario.rol.description !== 'DOCENTE') continue;
+
+                if (!docentesMap.has(usuario.id)) {
+                    docentesMap.set(usuario.id, {
+                        id: usuario.id,
+                        name_full: usuario.name_full,
+                        mail: usuario.mail,
+                        cellphone: usuario.cellphone,
+                        grupos: []
+                    });
+                }
+                docentesMap.get(usuario.id)!.grupos.push({
+                    id_grupo: grupo.id,
+                    grupo_name: grupo.name,
+                    materia_name: grupo.materia.name
+                });
+            }
+        }
+
+        return Array.from(docentesMap.values());
     }
 }
 

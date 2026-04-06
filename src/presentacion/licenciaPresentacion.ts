@@ -2,16 +2,25 @@ import { Request, Response } from "express";
 import NLicencia from "../negocios/licenciaNegocio";
 import NMateria from "../negocios/materiaNegocio";
 import NGrupo from "../negocios/grupoNegocio";
+import NUsuario from "../negocios/usuarioNegocio";
 
 class PLicencia {
-    private materias: string[];
-    private grupos: string[];
+    private materias: [];
+    private grupos: [];
     private id_usuario_solicitante: number;
+    private id_usuario: number;
+    private id: number;
+    private start_date: string;
+    private end_date: string;
 
     constructor() {
         this.materias = [];
         this.grupos = [];
         this.id_usuario_solicitante = 0;
+        this.id_usuario = 0;
+        this.id = 0;
+        this.start_date = '';
+        this.end_date = '';
     }
 
     getAll = async (req: Request, res: Response) => {
@@ -95,6 +104,54 @@ class PLicencia {
         } catch (error: any) {
             console.log("Error al obtener grupos: ", error.message);
             return res.status(500).json(error.message);
+        }
+    }
+
+    contactarDocente = async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            const licencia = await NLicencia.getById(Number(id));
+            if (!licencia) {
+                return res.status(404).json({ success: false, message: 'Licencia no encontrada' });
+            }
+
+            const estudiante = licencia.usuario_solicitante;
+            const nombreEstudiante = estudiante.name_full;
+            const registroEstudiante = estudiante.num_register;
+
+            const docentes = await NUsuario.getDocentesByLicencia(Number(id));
+            if (!docentes || docentes.length === 0) {
+                return res.status(404).json({ success: false, message: 'No se encontraron docentes para esta licencia' });
+            }
+
+            const result = docentes.map(docente => {
+                const gruposText = docente.grupos
+                    .map(g => `grupo ${g.grupo.name} (${g.grupo.materia.name})`)
+                    .join(', ');
+
+                const mensaje =
+                    `Estimado/a ${docente.name_full}, le informamos que la solicitud de licencia ` +
+                    `del/la estudiante ${nombreEstudiante} (Nro. de registro: ${registroEstudiante}) ` +
+                    `ha sido APROBADA. Los grupos afectados bajo su responsabilidad son: ${gruposText}. ` +
+                    `Por favor tome nota de esta novedad. — Sistema de Licencias UAGRM`;
+
+                const telefono = docente.cellphone.replace(/\D/g, '');
+                const whatsapp_url = `https://wa.me/+591${telefono}?text=${encodeURIComponent(mensaje)}`;
+                return {
+                    id: docente.id,
+                    name_full: docente.name_full,
+                    mail: docente.mail,
+                    cellphone: docente.cellphone,
+                    grupos: docente.grupos,
+                    whatsapp_url
+                };
+            });
+
+            return res.status(200).json({ success: true, data: result });
+        } catch (error: any) {
+            console.log("Error al contactar docente: ", error.message);
+            return res.status(500).json({ success: false, message: error.message });
         }
     }
 }
