@@ -3,3 +3,12 @@ npm run seed
 npx prisma generate
 npx prisma db push
 npx prisma db seed
+
+
+select * from "Usuario"
+
+update "Usuario" set mail = 'prueba2@gmail.com' where id = 1
+
+update "Usuario" set mail = 'roberthuarachi27@gmail.com' where id = 5
+
+update "Licencia" set state = 0 where id = 6
