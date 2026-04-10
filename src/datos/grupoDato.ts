@@ -12,36 +12,23 @@ class DGrupo {
         });
     }
 
-    async create(data: { name: string, id_materia: number, ids_horario: number[] }) {
-        const { name, id_materia, ids_horario } = data;
+    async create(data: { name: string, id_materia: number }) {
+        const { name, id_materia } = data;
         return await db.grupo.create({
             data: {
                 name,
                 id_materia,             // FK directo en tabla Grupo
-                horario: {
-                    create: ids_horario.map((id_horario: number) => ({
-                        id_horario
-                    }))
-                }
             }
         });
     }
 
-    async update(id: number, data: Partial<{ name: string, id_materia: number, ids_horario: number[] }>) {
-        const { name, id_materia, ids_horario } = data;
+    async update(id: number, data: Partial<{ name: string, id_materia: number }>) {
+        const { name, id_materia } = data;
         return await db.grupo.update({
             where: { id },
             data: {
                 ...(name !== undefined && { name }),
                 ...(id_materia !== undefined && { id_materia }),
-                ...(ids_horario !== undefined && {
-                    horario: {
-                        deleteMany: {},
-                        create: ids_horario.map((id_horario: number) => ({
-                            id_horario
-                        }))
-                    }
-                })
             }
         });
     }

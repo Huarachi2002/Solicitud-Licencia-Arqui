@@ -1,12 +1,19 @@
 import DUsuario from "../datos/usuarioDato";
+import DUsuarioGrupo from "../datos/usuarioGrupoDato";
 
 class NUsuario {
     async registerStudent(data: { id_rol: number, name_full: string, mail: string, cellphone: string, num_register: string, password: string, ids_grupo: number[] }) {
-        return await DUsuario.registerStudent(data);
+        const { ids_grupo, ...rest } = data;
+        const newUsuario = await DUsuario.registerStudent(rest);
+        await DUsuarioGrupo.asignarGrupos(newUsuario.id, ids_grupo);
+        return newUsuario;
     }
 
     async registerTeacher(data: { id_rol: number, name_full: string, mail: string, cellphone: string, num_register: string, password: string, ids_grupo: number[] }) {
-        return await DUsuario.registerTeacher(data);
+        const { ids_grupo, ...rest } = data;
+        const newUsuario = await DUsuario.registerTeacher(rest);
+        await DUsuarioGrupo.asignarGrupos(newUsuario.id, data.ids_grupo);
+        return newUsuario;
     }
 
     async login(data: { num_register: string, password: string }) {

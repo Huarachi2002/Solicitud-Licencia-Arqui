@@ -1,8 +1,8 @@
 import db from '../config/db';
 
 class DUsuario {
-    async registerStudent(data: { id_rol: number, name_full: string, mail: string, cellphone: string, num_register: string, password: string, ids_grupo: number[] }) {
-        const { id_rol, name_full, mail, cellphone, num_register, password, ids_grupo } = data;
+    async registerStudent(data: { id_rol: number, name_full: string, mail: string, cellphone: string, num_register: string, password: string }) {
+        const { id_rol, name_full, mail, cellphone, num_register, password } = data;
         return await db.usuario.create({
             data: {
                 id_rol,
@@ -10,18 +10,13 @@ class DUsuario {
                 mail,
                 cellphone,
                 num_register,
-                password,
-                grupos: {
-                    create: ids_grupo.map((id: number) => ({
-                        id_grupo: id
-                    }))
-                }
+                password
             }
         });
     }
 
-    async registerTeacher(data: { id_rol: number, name_full: string, mail: string, cellphone: string, num_register: string, password: string, ids_grupo: number[] }) {
-        const { id_rol, name_full, mail, cellphone, num_register, password, ids_grupo } = data;
+    async registerTeacher(data: { id_rol: number, name_full: string, mail: string, cellphone: string, num_register: string, password: string }) {
+        const { id_rol, name_full, mail, cellphone, num_register, password } = data;
         return await db.usuario.create({
             data: {
                 id_rol,
@@ -29,12 +24,7 @@ class DUsuario {
                 mail,
                 cellphone,
                 num_register,
-                password,
-                grupos: {
-                    create: ids_grupo.map((id: number) => ({
-                        id_grupo: id
-                    }))
-                }
+                password
             }
         });
     }

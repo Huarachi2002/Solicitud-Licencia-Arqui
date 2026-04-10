@@ -13,14 +13,6 @@ class PHorario {
         this.end_time = '';
     }
 
-    messagePop = (req: Request, res: Response) => {
-        const { message, type } = req.query;
-        res.render('message-pop', {
-            message: message || '',
-            type: type || 'info'
-        });
-    }
-
     async getAll(req: Request, res: Response) {
         const horarios = await NHorario.getAll();
         return res.status(200).json(horarios);
